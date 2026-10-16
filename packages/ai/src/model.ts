@@ -3,20 +3,11 @@ import type { Logger } from "@zaly/shared/logger"
 import type { ContentTransform } from "./content/transform.ts"
 import type { ModelCatalog } from "./models/catalog.ts"
 import type { ModelFilter } from "./models/filter.ts"
-import type {
-  CollectOptions,
-  Context,
-  Provider,
-  StreamEvent,
-  StreamOptions,
-  TokenCount,
-  Usage,
-} from "./provider.ts"
+import type { CollectOptions, Context, Provider, StreamEvent, StreamOptions } from "./provider.ts"
 import type { AnyProvider } from "./providers/registry.ts"
 import type {
   AnyPart,
   Attachment,
-  Cost,
   Message,
   Modality,
   ModelProvider,
@@ -31,6 +22,7 @@ import { AuthManager } from "./auth/manager.ts"
 import { attachmentToMeta } from "./content/compose.ts"
 import { createTransform } from "./content/transform.ts"
 import { getModel, loadCatalog } from "./models/catalog.ts"
+import { computeCost, costMultiplier } from "./pricing.ts"
 import { collect } from "./provider.ts"
 import { providerRegistry } from "./providers/registry.ts"
 import { pairedToolIds } from "./tools.ts"
@@ -105,7 +97,8 @@ export class Model<T extends AnyProvider = string> {
    *  to text anyway.
    *
    *  If the model has catalog cost data, `finish` events get a
-   *  populated `usage.cost` breakdown. */
+   *  populated `usage.cost` breakdown, priced at the rate in effect when
+   *  the request is sent (`spec.costSchedule`). */
   #stream(ctx: Context, opts: StreamOptions = {}): AsyncIterable<StreamEvent> {
     const streamOpts: StreamOptions = {
       ...opts,
@@ -128,6 +121,9 @@ export class Model<T extends AnyProvider = string> {
   }
 
   async stream(ctx: Context, opts: ModelStreamOptions = {}): Promise<AssistantMessage> {
+    // Price the request at the rate in effect when it is sent. Computing
+    // cost later (replay, `/info`) would reprice history on every read.
+    const sentAt = new Date()
     const ret = await collect(this.#stream(ctx, opts), opts)
     const meta = {
       ...ret.message.meta, // just in case so that we capture future provider-level meta
@@ -135,7 +131,9 @@ export class Model<T extends AnyProvider = string> {
       modelId: this.id,
       usage: {
         ...ret.usage,
-        cost: this.spec.cost ? computeCost(ret.usage, this.spec.cost) : undefined,
+        cost: this.spec.cost
+          ? computeCost(ret.usage, this.spec.cost, costMultiplier(this.spec.costSchedule, sentAt))
+          : undefined,
       },
     }
     return { ...ret.message, meta }
@@ -176,30 +174,6 @@ export async function loadModel(
   })
 
   return new Model({ id, provider, spec })
-}
-
-/** Compute per-field USD cost from token counts + a price table.
- *  Models.dev prices are USD per million tokens. Cache reads/writes
- *  fall back to the input price when the catalog doesn't break them
- *  out (rare — most providers publish all three).
- *
- *  `usage.input` is already the uncached portion (see `TokenCount`
- *  docs), so each tier multiplies by its own price directly — no
- *  subtraction needed. */
-function computeCost(usage: Usage, prices: Cost): TokenCount {
-  const cacheRead = usage.cacheRead ?? 0
-  const cacheWrite = usage.cacheWrite ?? 0
-  const M = 1_000_000
-  const cost: TokenCount = {
-    input: (usage.input * prices.input) / M,
-    output: (usage.output * prices.output) / M,
-  }
-  if (cacheRead > 0) cost.cacheRead = (cacheRead * (prices.cache_read ?? prices.input)) / M
-  if (cacheWrite > 0) cost.cacheWrite = (cacheWrite * (prices.cache_write ?? prices.input)) / M
-  if (usage.reasoning !== undefined && prices.reasoning !== undefined) {
-    cost.reasoning = (usage.reasoning * prices.reasoning) / M
-  }
-  return cost
 }
 
 export type ModelCtx = {

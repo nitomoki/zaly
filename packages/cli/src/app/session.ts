@@ -388,7 +388,7 @@ export async function sessionInfo(app: App) {
 
   info.push("> [!NOTE]")
   info.push(
-    "> Cost is estimated from model catalog pricing and may not reflect subscriptions or provider discounts."
+    "> Cost is estimated from model catalog pricing, at the peak/off-peak rate in effect when each request was sent. It may not reflect subscriptions, balance grants, or holiday exceptions."
   )
 
   info.push("### Details")

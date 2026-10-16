@@ -1,106 +1,320 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
   "additionalProperties": {
-    "additionalProperties": false,
+    "type": "object",
     "properties": {
+      "name": {
+        "type": "string",
+        "description": "Provider name *"
+      },
       "api": {
-        "$ref": "#/definitions/AnyProvider",
+        "type": "string",
         "description": "Adapter family to use for this provider."
       },
       "apiKey": {
         "type": "string"
       },
       "baseUrl": {
-        "description": "Base URL for API requests *",
-        "type": "string"
+        "type": "string",
+        "description": "Base URL for API requests *"
       },
       "doc": {
-        "description": "Docs link for this provider's model list.",
-        "type": "string"
+        "type": "string",
+        "description": "Docs link for this provider's model list."
       },
       "env": {
-        "description": "Env-var names consulted for credentials, in priority order. The first element is the conventional one (`OPENAI_API_KEY` etc.); downstream entries are fallbacks.",
+        "type": "array",
         "items": {
           "type": "string"
         },
-        "type": "array"
+        "description": "Env-var names consulted for credentials, in priority order.\nThe first element is the conventional one (`OPENAI_API_KEY`\netc.); downstream entries are fallbacks."
       },
       "headers": {
-        "additionalProperties": {
-          "type": "string"
-        },
-        "type": "object"
-      },
-      "models": {
-        "items": {
-          "$ref": "#/definitions/ModelInfo"
-        },
-        "type": "array"
-      },
-      "name": {
-        "description": "Provider name *",
-        "type": "string"
+        "$ref": "#/definitions/Recordstringstring"
       },
       "quirks": {
         "$ref": "#/definitions/Quirks"
       },
-      "replaceModels": {
-        "type": "boolean"
+      "models": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/ModelInfo"
+        }
       },
       "source": {
+        "type": "string",
         "enum": [
-          "models.dev",
           "builtin",
           "custom",
+          "models.dev",
           "models.json"
-        ],
+        ]
+      },
+      "replaceModels": {
+        "type": "boolean"
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  },
+  "definitions": {
+    "Recordstringstring": {
+      "type": "object",
+      "additionalProperties": {
         "type": "string"
       }
     },
-    "type": "object"
-  },
-  "definitions": {
-    "AnyProvider": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/BuiltinProvider"
+    "Quirks": {
+      "type": "object",
+      "properties": {
+        "sessionHeader": {
+          "type": "string",
+          "description": "Header carrying the conversation identity. Independent of prompt caching."
         },
-        {
+        "maxTokensField": {
+          "type": "string",
+          "enum": [
+            "max_completion_tokens",
+            "max_output_tokens",
+            "max_tokens",
+            "none"
+          ],
+          "description": "Which wire field carries the max-output-tokens cap, per adapter\nfamily.\n\nChat Completions:\n  - `\"max_tokens\"`            — legacy, most third-parties\n  - `\"max_completion_tokens\"` — newer OpenAI + reasoning models\n\nResponses:\n  - `\"max_output_tokens\"`     — public Responses API default\n\nAll families:\n  - `\"none\"` — suppress entirely. Codex backend rejects any\n    max-tokens field with `Unsupported parameter`."
+        },
+        "thinkingFormat": {
+          "type": "string",
+          "enum": [
+            "deepseek",
+            "openai",
+            "openrouter",
+            "qwen",
+            "qwen-chat-template",
+            "zai"
+          ],
+          "description": "How the provider expects reasoning / thinking requests shaped.\n- `\"openai\"`              → `reasoning_effort: \"minimal|low|medium|high\"`\n- `\"openrouter\"`          → `reasoning: { effort }`\n- `\"deepseek\"`            → `thinking: { type: \"enabled\" }` + `reasoning_effort`\n- `\"zai\"` / `\"qwen\"`      → top-level `enable_thinking: boolean`\n- `\"qwen-chat-template\"`  → `chat_template_kwargs.enable_thinking`"
+        },
+        "reasoningLevels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "high",
+              "low",
+              "max",
+              "medium",
+              "minimal",
+              "off",
+              "xhigh"
+            ]
+          },
+          "description": "Which effort levels this model actually accepts. Adapter clamps\nunsupported values to the nearest supported one — `\"xhigh\"` on\npre-GPT-5.4 → `\"high\"`, `\"minimal\"` on o1/o3 → `\"low\"`. Unset\nmeans any level is accepted."
+        },
+        "reasoningField": {
+          "type": "string",
+          "enum": [
+            "reasoning",
+            "reasoning_content",
+            "reasoning_details"
+          ],
+          "description": "Streaming delta field that carries reasoning tokens.\n- `\"reasoning\"` (OpenRouter, most third-parties)\n- `\"reasoning_content\"` (DeepSeek-ish)\n- `\"reasoning_details\"` (structured form on a few providers)\nIf unset, adapter accepts any of the three."
+        },
+        "temperatureSupported": {
+          "type": "boolean",
+          "description": "Model accepts `temperature`. Default derived from\n`ModelInfo.temperature` (catalog field); set here to override."
+        },
+        "strictTools": {
+          "type": "boolean",
+          "description": "Model supports `strict: true` on tool definitions. Default false."
+        },
+        "responsesStore": {
+          "type": "boolean",
+          "description": "Whether the Responses API persists the response server-side\n(`store`). Default `true`. Codex backend requires `false`."
+        },
+        "responsesInclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra fields to request on the response payload. Codex backend\nneeds `[\"reasoning.encrypted_content\"]` so the model can round-trip\nreasoning across turns."
+        },
+        "responsesSystemAs": {
+          "type": "string",
+          "enum": [
+            "input",
+            "instructions"
+          ],
+          "description": "Where the durable system prompt lands.\n- `\"input\"` (default) — first item, `role: \"system\"` message.\n- `\"instructions\"` — top-level `instructions` field. Codex backend\n  rejects system messages in `input` and requires this."
+        },
+        "responsesReasoningSummary": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "concise",
+            "detailed",
+            "off"
+          ],
+          "description": "Reasoning summary verbosity for the Responses API. Default\n`\"auto\"`. `\"off\"` disables the summary stream."
+        },
+        "friendlyErrors": {
+          "type": "string",
+          "enum": [
+            "codex"
+          ],
+          "description": "Friendly-error formatting for known endpoint shapes. `\"codex\"`\nparses ChatGPT usage-limit responses into a human message."
+        },
+        "toolCallExtraContent": {
           "type": "string"
         }
-      ]
-    },
-    "BuiltinProvider": {
-      "enum": [
-        "anthropic",
-        "openai",
-        "openai-responses"
-      ],
-      "type": "string"
-    },
-    "Cost": {
+      },
+      "required": [],
       "additionalProperties": false,
-      "description": "Per-tier cost. Values are USD per **million tokens** (models.dev convention). Optional fields are only present when the provider publishes distinct pricing for that axis.",
+      "description": "Provider-specific wire quirks that \"OpenAI compatibility\" doesn't\nactually cover. Each field names an axis of variation with a\ntyped union of known shapes; adapters read these and dispatch.\n\nPopulated by `getModel` from `assets/quirks.json` — provider-level\ndefaults overlaid with per-model overrides. Users can further\noverride per-model via `addModels` or per-call via the request's\n`quirks` field.\n\nAdd new axes here as they surface; start minimal."
+    },
+    "ModelInfo": {
+      "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "description": "Model specific baseUrl override *"
+        },
+        "api": {
+          "type": "string",
+          "description": "adapter to use: anthropic, openai, openai-responses, etc."
+        },
+        "input": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Modality"
+          },
+          "description": "Input modalities this model accepts"
+        },
+        "output": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Modality"
+          }
+        },
+        "maxTokens": {
+          "type": "number",
+          "description": "Max output tokens this model accepts"
+        },
+        "contextSize": {
+          "type": "number",
+          "description": "Max context size for this model"
+        },
+        "reasoning": {
+          "type": "boolean",
+          "description": "Emits reasoning / thinking tokens."
+        },
+        "knowledge": {
+          "type": "string",
+          "description": "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`."
+        },
+        "release_date": {
+          "type": "string",
+          "description": "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational."
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational."
+        },
+        "open_weights": {
+          "type": "boolean",
+          "description": "Model weights are publicly released. Informational."
+        },
+        "cost": {
+          "$ref": "#/definitions/Cost__type",
+          "description": "Pricing per million tokens. `context_over_200k` is the higher\ntier some providers bill for prompts over 200K tokens."
+        },
+        "costSchedule": {
+          "$ref": "#/definitions/CostSchedule",
+          "description": "Time-of-day pricing multiplied onto `cost`. Absent for providers\nthat charge the same rate around the clock."
+        },
+        "tool_call": {
+          "type": "boolean",
+          "description": "Supports tool calling. Informational — we filter non-tool models\nout of the generated catalog, so at runtime this is effectively\nalways true. Optional to make `addModels` ergonomic."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "description": "Metadata for one model. Mirrors the models.dev `Model` schema plus a\nfew zaly additions that schema can't express (`costSchedule`). Loaded\nlazily per-provider via `getModel(id)` or eagerly via `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type):\nwhen `reasoning === false`, `cost.reasoning` is absent."
+    },
+    "Modality": {
+      "type": "string",
+      "enum": [
+        "audio",
+        "image",
+        "pdf",
+        "text",
+        "video"
+      ],
+      "description": "Input/output modality."
+    },
+    "Cost__type": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "number"
+        },
+        "output": {
+          "type": "number"
+        },
+        "reasoning": {
+          "type": "number"
+        },
         "cache_read": {
           "type": "number"
         },
         "cache_write": {
           "type": "number"
         },
-        "input": {
-          "type": "number"
-        },
         "input_audio": {
-          "type": "number"
-        },
-        "output": {
           "type": "number"
         },
         "output_audio": {
           "type": "number"
         },
+        "context_over_200k": {
+          "$ref": "#/definitions/Cost"
+        }
+      },
+      "required": [
+        "input",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "Cost": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "number"
+        },
+        "output": {
+          "type": "number"
+        },
         "reasoning": {
+          "type": "number"
+        },
+        "cache_read": {
+          "type": "number"
+        },
+        "cache_write": {
+          "type": "number"
+        },
+        "input_audio": {
+          "type": "number"
+        },
+        "output_audio": {
           "type": "number"
         }
       },
@@ -108,226 +322,62 @@
         "input",
         "output"
       ],
-      "type": "object"
-    },
-    "Modality": {
-      "description": "Input/output modality.",
-      "enum": [
-        "text",
-        "audio",
-        "image",
-        "video",
-        "pdf"
-      ],
-      "type": "string"
-    },
-    "ModelInfo": {
       "additionalProperties": false,
-      "description": "Metadata for one model. One-to-one with the models.dev `Model` schema. Loaded lazily per-provider via `getModel(id)` or eagerly via `listModels()`.\n\nRuntime invariant enforced by the catalog (not by the TS type): when `reasoning === false`, `cost.reasoning` is absent.",
+      "description": "Per-tier cost. Values are USD per **million tokens** (models.dev\nconvention). Optional fields are only present when the provider\npublishes distinct pricing for that axis."
+    },
+    "CostSchedule": {
+      "type": "object",
       "properties": {
-        "api": {
-          "$ref": "#/definitions/AnyProvider",
-          "description": "adapter to use: anthropic, openai, openai-responses, etc."
-        },
-        "baseUrl": {
-          "description": "Model specific baseUrl override *",
-          "type": "string"
-        },
-        "contextSize": {
-          "description": "Max context size for this model",
-          "type": "number"
-        },
-        "cost": {
-          "additionalProperties": false,
-          "description": "Pricing per million tokens. `context_over_200k` is the higher tier some providers bill for prompts over 200K tokens.",
-          "properties": {
-            "cache_read": {
-              "type": "number"
-            },
-            "cache_write": {
-              "type": "number"
-            },
-            "context_over_200k": {
-              "$ref": "#/definitions/Cost"
-            },
-            "input": {
-              "type": "number"
-            },
-            "input_audio": {
-              "type": "number"
-            },
-            "output": {
-              "type": "number"
-            },
-            "output_audio": {
-              "type": "number"
-            },
-            "reasoning": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "input",
-            "output"
-          ],
-          "type": "object"
-        },
-        "id": {
-          "type": "string"
-        },
-        "input": {
-          "description": "Input modalities this model accepts",
+        "windows": {
+          "type": "array",
           "items": {
-            "$ref": "#/definitions/Modality"
-          },
-          "type": "array"
+            "$ref": "#/definitions/CostWindow"
+          }
         },
-        "knowledge": {
-          "description": "Knowledge cutoff in `YYYY-MM` or `YYYY-MM-DD`.",
-          "type": "string"
-        },
-        "last_updated": {
-          "description": "Last catalog update in `YYYY-MM` or `YYYY-MM-DD`. Informational.",
-          "type": "string"
-        },
-        "maxTokens": {
-          "description": "Max output tokens this model accepts",
-          "type": "number"
-        },
-        "name": {
-          "type": "string"
-        },
-        "open_weights": {
-          "description": "Model weights are publicly released. Informational.",
-          "type": "boolean"
-        },
-        "output": {
+        "holidays": {
+          "type": "array",
           "items": {
-            "$ref": "#/definitions/Modality"
+            "type": "string"
           },
-          "type": "array"
-        },
-        "reasoning": {
-          "description": "Emits reasoning / thinking tokens.",
-          "type": "boolean"
-        },
-        "release_date": {
-          "description": "Release date in `YYYY-MM` or `YYYY-MM-DD`. Informational.",
-          "type": "string"
-        },
-        "tool_call": {
-          "description": "Supports tool calling. Informational — we filter non-tool models out of the generated catalog, so at runtime this is effectively always true. Optional to make `addModels` ergonomic.",
-          "type": "boolean"
+          "description": "UTC dates (`YYYY-MM-DD`) billed at the base price all day —\npublic holidays in the provider's home market."
         }
       },
       "required": [
-        "id"
+        "windows"
       ],
-      "type": "object"
-    },
-    "Quirks": {
       "additionalProperties": false,
-      "description": "Provider-specific wire quirks that \"OpenAI compatibility\" doesn't actually cover. Each field names an axis of variation with a typed union of known shapes; adapters read these and dispatch.\n\nPopulated by `getModel` from `assets/quirks.json` — provider-level defaults overlaid with per-model overrides. Users can further override per-model via `addModels` or per-call via the request's `quirks` field.\n\nAdd new axes here as they surface; start minimal.",
+      "description": "Time-of-day pricing applied on top of `cost`. Some providers\n(DeepSeek) bill peak hours at a multiple of their quiet-hour rate,\nand models.dev publishes the quiet-hour numbers — so quoting `cost`\nflat understates a request made at peak. Windows are matched against\nthe request's UTC wall clock."
+    },
+    "CostWindow": {
+      "type": "object",
       "properties": {
-        "friendlyErrors": {
-          "const": "codex",
-          "description": "Friendly-error formatting for known endpoint shapes. `\"codex\"` parses ChatGPT usage-limit responses into a human message.",
-          "type": "string"
-        },
-        "maxTokensField": {
-          "description": "Which wire field carries the max-output-tokens cap, per adapter family.\n\nChat Completions:   - `\"max_tokens\"`            — legacy, most third-parties   - `\"max_completion_tokens\"` — newer OpenAI + reasoning models\n\nResponses:   - `\"max_output_tokens\"`     — public Responses API default\n\nAll families:   - `\"none\"` — suppress entirely. Codex backend rejects any     max-tokens field with `Unsupported parameter`.",
-          "enum": [
-            "max_tokens",
-            "max_completion_tokens",
-            "max_output_tokens",
-            "none"
-          ],
-          "type": "string"
-        },
-        "reasoningField": {
-          "description": "Streaming delta field that carries reasoning tokens.\n- `\"reasoning\"` (OpenRouter, most third-parties)\n- `\"reasoning_content\"` (DeepSeek-ish)\n- `\"reasoning_details\"` (structured form on a few providers) If unset, adapter accepts any of the three.",
-          "enum": [
-            "reasoning",
-            "reasoning_content",
-            "reasoning_details"
-          ],
-          "type": "string"
-        },
-        "reasoningLevels": {
-          "description": "Which effort levels this model actually accepts. Adapter clamps unsupported values to the nearest supported one — `\"xhigh\"` on pre-GPT-5.4 → `\"high\"`, `\"minimal\"` on o1/o3 → `\"low\"`. Unset means any level is accepted.",
+        "days": {
+          "type": "array",
           "items": {
-            "enum": [
-              "off",
-              "minimal",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max"
-            ],
-            "type": "string"
+            "type": "number"
           },
-          "type": "array"
+          "description": "ISO weekday numbers (1 = Monday … 7 = Sunday). Omitted = every day."
         },
-        "responsesInclude": {
-          "description": "Extra fields to request on the response payload. Codex backend needs `[\"reasoning.encrypted_content\"]` so the model can round-trip reasoning across turns.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "start": {
+          "type": "string",
+          "description": "Window start, `HH:MM` UTC, inclusive."
         },
-        "responsesReasoningSummary": {
-          "description": "Reasoning summary verbosity for the Responses API. Default `\"auto\"`. `\"off\"` disables the summary stream.",
-          "enum": [
-            "auto",
-            "concise",
-            "detailed",
-            "off"
-          ],
-          "type": "string"
+        "end": {
+          "type": "string",
+          "description": "Window end, `HH:MM` UTC, exclusive. Earlier than `start` wraps\npast midnight; `24:00` covers the rest of the day."
         },
-        "responsesStore": {
-          "description": "Whether the Responses API persists the response server-side (`store`). Default `true`. Codex backend requires `false`.",
-          "type": "boolean"
-        },
-        "responsesSystemAs": {
-          "description": "Where the durable system prompt lands.\n- `\"input\"` (default) — first item, `role: \"system\"` message.\n- `\"instructions\"` — top-level `instructions` field. Codex backend   rejects system messages in `input` and requires this.",
-          "enum": [
-            "input",
-            "instructions"
-          ],
-          "type": "string"
-        },
-        "sessionHeader": {
-          "description": "Header carrying the conversation identity. Independent of prompt caching.",
-          "type": "string"
-        },
-        "strictTools": {
-          "description": "Model supports `strict: true` on tool definitions. Default false.",
-          "type": "boolean"
-        },
-        "temperatureSupported": {
-          "description": "Model accepts `temperature`. Default derived from `ModelInfo.temperature` (catalog field); set here to override.",
-          "type": "boolean"
-        },
-        "thinkingFormat": {
-          "description": "How the provider expects reasoning / thinking requests shaped.\n- `\"openai\"`              → `reasoning_effort: \"minimal|low|medium|high\"`\n- `\"openrouter\"`          → `reasoning: { effort }`\n- `\"deepseek\"`            → `thinking: { type: \"enabled\" }` + `reasoning_effort`\n- `\"zai\"` / `\"qwen\"`      → top-level `enable_thinking: boolean`\n- `\"qwen-chat-template\"`  → `chat_template_kwargs.enable_thinking`",
-          "enum": [
-            "openai",
-            "openrouter",
-            "deepseek",
-            "zai",
-            "qwen",
-            "qwen-chat-template"
-          ],
-          "type": "string"
-        },
-        "toolCallExtraContent": {
-          "type": "string"
+        "multiplier": {
+          "type": "number",
+          "description": "Multiplier applied to every tier inside the window."
         }
       },
-      "type": "object"
+      "required": [
+        "start",
+        "end",
+        "multiplier"
+      ],
+      "additionalProperties": false,
+      "description": "A recurring UTC window charged at a multiple of the base price.\nWindows in the same schedule must not overlap; the first match wins."
     }
-  },
-  "type": "object"
+  }
 }

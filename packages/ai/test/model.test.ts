@@ -46,6 +46,19 @@ models.register({
       api: "mock-cost-test" as never,
       reasoning: false,
     },
+    {
+      id: "always-peak",
+      // Same price table as `cheap`, but a schedule that covers the whole
+      // day — so the test does not have to pin the clock.
+      cost: { input: 1, output: 4 },
+      costSchedule: { windows: [{ end: "24:00", multiplier: 2, start: "00:00" }] },
+      contextSize: 100_000,
+      maxTokens: 4096,
+      input: ["text"],
+      name: "Always Peak",
+      api: "mock-cost-test" as never,
+      reasoning: false,
+    },
   ],
 })
 
@@ -85,5 +98,14 @@ describe("Model.stream — cost augmentation", () => {
     expect(message.meta.usage.input).toBe(100)
     expect(message.meta.usage.output).toBe(10)
     expect(message.meta.usage.cost).toBeUndefined()
+  })
+
+  test("multiplies the price table by the schedule in effect", async () => {
+    scriptedEvents = [{ finishReason: "stop", type: "finish", usage: { input: 1000, output: 50 } }]
+    const model = await models.load("mock-cost-test/always-peak")
+    const message = await model.stream({ messages: [{ content: "hi", role: "user" }] })
+    const cost = message.meta.usage.cost!
+    expect(cost.input).toBeCloseTo((1000 * 1 * 2) / 1_000_000)
+    expect(cost.output).toBeCloseTo((50 * 4 * 2) / 1_000_000)
   })
 })

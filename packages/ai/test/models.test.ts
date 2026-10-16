@@ -96,6 +96,29 @@ describe("filterModel", async () => {
 })
 
 describe("builtinOverrides", () => {
+  test("deepseek stamps the peak/off-peak schedule onto every catalog model", async () => {
+    const models = builtinOverrides.deepseek?.models as (catalog: ModelCatalog) => ModelInfo[]
+    const deepseek = customProvider({ id: "deepseek/deepseek-flash" })
+    const catalog = {
+      provider: (id: string) => (id === "deepseek" ? deepseek : undefined),
+    } as unknown as ModelCatalog
+
+    const stamped = models(catalog)
+    expect(stamped.map((m) => m.id)).toEqual(["deepseek-flash"])
+    expect(stamped[0]?.costSchedule).toEqual({
+      windows: [
+        { days: [1, 2, 3, 4, 5], end: "04:00", multiplier: 2, start: "01:00" },
+        { days: [1, 2, 3, 4, 5], end: "10:00", multiplier: 2, start: "06:00" },
+      ],
+    })
+  })
+
+  test("served deepseek specs keep their price table and gain the schedule", async () => {
+    const spec = await getModel("deepseek/deepseek-flash")
+    expect(spec?.cost?.input).toBe(0.15)
+    expect(spec?.costSchedule?.windows).toHaveLength(2)
+  })
+
   test("openai-codex returns no cloned models without an openai provider", async () => {
     const models = builtinOverrides["openai-codex"]?.models as (
       catalog: ModelCatalog

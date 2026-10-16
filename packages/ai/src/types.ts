@@ -404,9 +404,35 @@ export type Cost = {
   output_audio?: number
 }
 
-/** Metadata for one model. One-to-one with the models.dev `Model`
- *  schema. Loaded lazily per-provider via `getModel(id)` or eagerly
- *  via `listModels()`.
+/** A recurring UTC window charged at a multiple of the base price.
+ *  Windows in the same schedule must not overlap; the first match wins. */
+export type CostWindow = {
+  /** ISO weekday numbers (1 = Monday … 7 = Sunday). Omitted = every day. */
+  days?: number[]
+  /** Window start, `HH:MM` UTC, inclusive. */
+  start: string
+  /** Window end, `HH:MM` UTC, exclusive. Earlier than `start` wraps
+   *  past midnight; `24:00` covers the rest of the day. */
+  end: string
+  /** Multiplier applied to every tier inside the window. */
+  multiplier: number
+}
+
+/** Time-of-day pricing applied on top of `cost`. Some providers
+ *  (DeepSeek) bill peak hours at a multiple of their quiet-hour rate,
+ *  and models.dev publishes the quiet-hour numbers — so quoting `cost`
+ *  flat understates a request made at peak. Windows are matched against
+ *  the request's UTC wall clock. */
+export type CostSchedule = {
+  windows: CostWindow[]
+  /** UTC dates (`YYYY-MM-DD`) billed at the base price all day —
+   *  public holidays in the provider's home market. */
+  holidays?: string[]
+}
+
+/** Metadata for one model. Mirrors the models.dev `Model` schema plus a
+ *  few zaly additions that schema can't express (`costSchedule`). Loaded
+ *  lazily per-provider via `getModel(id)` or eagerly via `listModels()`.
  *
  *  Runtime invariant enforced by the catalog (not by the TS type):
  *  when `reasoning === false`, `cost.reasoning` is absent. */
@@ -437,6 +463,9 @@ export type ModelInfo = {
   /** Pricing per million tokens. `context_over_200k` is the higher
    *  tier some providers bill for prompts over 200K tokens. */
   cost?: Cost & { context_over_200k?: Cost }
+  /** Time-of-day pricing multiplied onto `cost`. Absent for providers
+   *  that charge the same rate around the clock. */
+  costSchedule?: CostSchedule
   /** Supports tool calling. Informational — we filter non-tool models
    *  out of the generated catalog, so at runtime this is effectively
    *  always true. Optional to make `addModels` ergonomic. */

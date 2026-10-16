@@ -17,8 +17,25 @@
  * provider has a quirk models.dev's catalog can't express.
  */
 
-import type { ModelProvider } from "../types.ts"
+import type { CostSchedule, ModelProvider } from "../types.ts"
 import type { ModelCatalog } from "./catalog.ts"
+
+/** DeepSeek bills peak hours at double the off-peak rate, and models.dev
+ *  publishes the off-peak numbers — so a flat quote halves the real bill
+ *  during peak. Peak is Mon–Fri 01:00–04:00 and 06:00–10:00 UTC; every
+ *  other hour, plus weekends and Chinese public holidays in full, is
+ *  off-peak.
+ *
+ *  Holidays are the one part we can't derive: China's State Council
+ *  publishes them a year at a time, so list them in `holidays` as
+ *  `YYYY-MM-DD` (UTC). Until then a peak weekday that falls on a holiday
+ *  is overestimated — the safe direction for a budget. */
+const DEEPSEEK_COST: CostSchedule = {
+  windows: [
+    { days: [1, 2, 3, 4, 5], end: "04:00", multiplier: 2, start: "01:00" },
+    { days: [1, 2, 3, 4, 5], end: "10:00", multiplier: 2, start: "06:00" },
+  ],
+}
 
 // oxlint-disable-next-line sort-keys
 export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined> = {
@@ -100,6 +117,14 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
 
   // ── DeepSeek ──────────────────────────────────────────────────────
   deepseek: {
+    // Re-emit the catalog models with the peak/off-peak schedule attached,
+    // so `Model.stream` can price by request time. Appending (rather than
+    // `replaceModels`) keeps the catalog as the source of the model list
+    // and of the price table itself.
+    models: (cat) =>
+      (cat.provider("deepseek")?.models ?? [])
+        // oxlint-disable-next-line oxc/no-map-spread
+        .map((m) => ({ ...m, costSchedule: DEEPSEEK_COST })),
     quirks: {
       maxTokensField: "max_tokens",
       reasoningField: "reasoning_content",
