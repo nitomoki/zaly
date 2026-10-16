@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.0.12](https://github.com/nitomoki/zaly/compare/v0.0.11...v0.0.12) (2026-10-16)
+
+
+### 🚀 Enhancements
+
+* **cli:** show resolved file paths and read ranges in tool previews ([d0e21bb](https://github.com/nitomoki/zaly/commit/d0e21bbb39fe664a6dff1da80c651e854e6ce34c))
+* **docs:** sync generated reference regions through a rolling PR ([5e3d4d7](https://github.com/nitomoki/zaly/commit/5e3d4d74d579b429d1e80e2a6b67bc603b3acf58))
+
+
+### 🩹 Fixes
+
+* **agent:** match file paths when checking read freshness ([6c443ef](https://github.com/nitomoki/zaly/commit/6c443ef631d5c57d4e5873fd05416e4ef5bd9305))
+* **agent:** process append submissions after pending injections ([d8f61e7](https://github.com/nitomoki/zaly/commit/d8f61e76452b32296cc23e7495359d6b21c6f4ec))
+* **cli:** fix bun shebang in postinstall script ([49c4fe6](https://github.com/nitomoki/zaly/commit/49c4fe656868e143dd97fd8270e28e644c416c9d))
+* **cli:** preserve tool results across replay boundaries ([0eb8010](https://github.com/nitomoki/zaly/commit/0eb80100bff7b264aa933291cd1c9d4436090fa9))
+
+
+### 📖 Documentation
+
+* add initial VitePress site and Pages deployment ([eab6532](https://github.com/nitomoki/zaly/commit/eab65325b57c51493fa2b080e4a719bb31053706))
+* added all changes before v0.0.10 ([4bc9843](https://github.com/nitomoki/zaly/commit/4bc9843b4ee60a1304ba2267a90a47f8b7986e17))
+* archive package changelogs ([3c7e330](https://github.com/nitomoki/zaly/commit/3c7e33075c873df0986c747ee8ffa1e52e9d63d3))
+* cleanup ([6445e67](https://github.com/nitomoki/zaly/commit/6445e677517050cf75a23423d98f99c10e4f9e9d))
+* remove superpowers docs ([6c8fe9b](https://github.com/nitomoki/zaly/commit/6c8fe9b91adee7d9aa13695eff40a53bca20c3f4))
+
+
+### 🤖 CI
+
+* **ai:** model updates now use `fix` commit ([51878fc](https://github.com/nitomoki/zaly/commit/51878fcb51d84e371f01b52e76e92000d22b33e7))
+* **ai:** update models every hour ([8c83676](https://github.com/nitomoki/zaly/commit/8c83676aea633afafb7d979e673c2fd549f0fc09))
+* consolidate releases into one root changelog ([1439aa2](https://github.com/nitomoki/zaly/commit/1439aa2777793f022b220770b873220d3224d2e0))
+* **dev:** use pnpm pack -r for packaging ([d558388](https://github.com/nitomoki/zaly/commit/d5583888382773361cdc64b00288f47575e4fc32))
+
 ## [0.0.11](https://github.com/folke/zaly/compare/v0.0.10...v0.0.11) (2026-10-14)
 
 
