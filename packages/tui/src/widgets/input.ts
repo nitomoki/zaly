@@ -125,9 +125,9 @@ export class Input extends Node<InputState, InputEvents> {
       this.state.cursor = lineColToPos(v, line + 1, this.#preferredCol)
     },
     "input.cursorLeft": (): void => {
-      const c = this.#cursor()
+      const v = this.state.value ?? ""
       this.#preferredCol = undefined
-      this.state.cursor = c > 0 ? c - 1 : c
+      this.state.cursor = prevGrapheme(v, this.#cursor())
     },
     "input.cursorLineEnd": (): void => {
       const v = this.state.value ?? ""
@@ -142,9 +142,8 @@ export class Input extends Node<InputState, InputEvents> {
     },
     "input.cursorRight": (): void => {
       const v = this.state.value ?? ""
-      const c = this.#cursor()
       this.#preferredCol = undefined
-      this.state.cursor = c < v.length ? c + 1 : c
+      this.state.cursor = nextGrapheme(v, this.#cursor())
     },
     "input.cursorUp": (): void => {
       const v = this.state.value ?? ""
@@ -164,7 +163,8 @@ export class Input extends Node<InputState, InputEvents> {
       this.#historyEdit()
       const marker = this.#markerRange(c, "back")
       if (marker) return this.#deleteRange(marker.start, marker.end)
-      this.state.set({ cursor: c - 1, value: v.slice(0, c - 1) + v.slice(c) })
+      const start = prevGrapheme(v, c)
+      this.state.set({ cursor: start, value: v.slice(0, start) + v.slice(c) })
     },
     "input.deleteCharForward": (): void => {
       const v = this.state.value ?? ""
@@ -174,7 +174,7 @@ export class Input extends Node<InputState, InputEvents> {
       this.#historyEdit()
       const marker = this.#markerRange(c, "forward")
       if (marker) return this.#deleteRange(marker.start, marker.end)
-      this.state.value = v.slice(0, c) + v.slice(c + 1)
+      this.state.value = v.slice(0, c) + v.slice(nextGrapheme(v, c))
     },
     "input.deleteWordBack": (): void => {
       const v = this.state.value ?? ""
@@ -523,22 +523,19 @@ export class Input extends Node<InputState, InputEvents> {
     // cells in any rendered row. Project the cursor to line/column before
     // slicing the formatted line.
     //
-    // `sliceAnsi` counts terminal cells, so the column is the display width
-    // of the line up to the cursor, not a string index. Tabs are expanded
-    // first because string-width counts a tab as 0 cells but slice-ansi as
-    // 1. The cursor cell spans the whole grapheme under it: given a range
-    // that splits a wide grapheme, slice-ansi drops it (Bun.sliceAnsi keeps it).
+    // Tabs are expanded before slicing because string-width counts a tab as
+    // 0 cells but slice-ansi as 1. The cursor cell spans the whole grapheme
+    // under it: given a range that splits a wide grapheme, slice-ansi drops
+    // it (Bun.sliceAnsi keeps it).
     if (focused && this.ctx?.input.terminalFocus) {
-      const { line } = posToLineCol(value, cursor)
+      const { col, line } = posToLineCol(value, cursor)
       const lines = splitAnsi(expandTabs(content))
       const target = Math.max(0, Math.min(line, lines.length - 1))
       const row = lines[target] ?? ""
-      const before = value.slice(lineStartPos(value, cursor), cursor)
-      const under = graphemes.segment(value.slice(cursor, lineEndPos(value, cursor))).containing(0)
-      const start = stringWidth(expandTabs(before))
-      const end = Math.max(start + 1, stringWidth(expandTabs(before + (under?.segment ?? ""))))
-      const head = sliceAnsi(row, 0, start)
-      const at = sliceAnsi(row, start, end) || " "
+      // At least one cell: past a newline, the next column restarts at 0.
+      const end = Math.max(col + 1, posToLineCol(value, nextGrapheme(value, cursor)).col)
+      const head = sliceAnsi(row, 0, col)
+      const at = sliceAnsi(row, col, end) || " "
       const tail = sliceAnsi(row, end)
       lines[target] = head + ctx.style.inverse(at) + tail
       content = lines.join("\n")
@@ -572,36 +569,54 @@ function isWhitespace(ch: string | undefined): boolean {
   return ch !== undefined && (ch === " " || ch === "\t" || ch === "\n")
 }
 
-function posToLineCol(value: string, cursor: number): { line: number; col: number } {
-  const prefix = value.slice(0, cursor)
-  const lineStart = prefix.lastIndexOf("\n") + 1
-  return {
-    col: stringWidth(prefix.slice(lineStart)),
-    line: prefix.split("\n").length - 1,
-  }
+/** Rendered width of a line prefix, with tabs expanded the way `formatText` expands them. */
+function cellWidth(text: string): number {
+  return stringWidth(expandTabs(text))
 }
 
+/** `col` counts terminal cells as rendered, not string indices. */
+function posToLineCol(value: string, cursor: number): { line: number; col: number } {
+  let line = 0
+  let lineStart = 0
+  for (let i = 0; i < cursor; i++) {
+    if (value[i] !== "\n") continue
+    line++
+    lineStart = i + 1
+  }
+  return { col: cellWidth(value.slice(lineStart, cursor)), line }
+}
+
+/** `col` counts terminal cells. A column inside a wide grapheme lands on
+ *  that grapheme. */
 function lineColToPos(value: string, line: number, col: number): number {
   const lines = value.split("\n")
   const clampLine = Math.max(0, Math.min(line, lines.length - 1))
   let abs = 0
   for (let i = 0; i < clampLine; i++) abs += lines[i].length + 1
-
-  let cells = 0
-  let offset = 0
-  for (const { segment } of graphemes.segment(lines[clampLine])) {
-    const width = stringWidth(segment)
-    if (cells + width > col) break
-    cells += width
-    offset += segment.length
+  const text = lines[clampLine]
+  let pos = 0
+  let width = 0
+  for (const { segment } of graphemes.segment(text)) {
+    if (width >= col) break
+    // Measuring each prefix whole would make long lines quadratic; only a
+    // tab's width depends on what precedes it.
+    const next = segment === "\t" ? cellWidth(text.slice(0, pos + 1)) : width + stringWidth(segment)
+    if (next > col) break
+    width = next
+    pos += segment.length
   }
-  return abs + offset
+  return abs + pos
 }
 
-function lineStartPos(value: string, cursor: number): number {
-  let i = cursor
-  while (i > 0 && value[i - 1] !== "\n") i--
-  return i
+function prevGrapheme(value: string, pos: number): number {
+  if (pos <= 0) return 0
+  return graphemes.segment(value).containing(pos - 1)!.index
+}
+
+function nextGrapheme(value: string, pos: number): number {
+  if (pos >= value.length) return value.length
+  const { index, segment } = graphemes.segment(value).containing(pos)!
+  return index + segment.length
 }
 
 function lineEndPos(value: string, cursor: number): number {

@@ -114,6 +114,27 @@ describe("Input.actions — character editing", () => {
     expect(n.state.value).toBe("ac")
     expect(n.state.cursor).toBe(1)
   })
+
+  test("deleteCharBack removes a whole astral char, not half of its surrogate pair", () => {
+    const n = input({ value: "a𠮟" })
+    n.actions["input.deleteCharBack"]()
+    expect(n.state.value).toBe("a")
+    expect(n.state.cursor).toBe(1)
+  })
+
+  test("deleteCharBack removes a base char together with its combining mark", () => {
+    const n = input({ value: "かか\u3099" }) // が in NFD
+    n.actions["input.deleteCharBack"]()
+    expect(n.state.value).toBe("か")
+    expect(n.state.cursor).toBe(1)
+  })
+
+  test("deleteCharForward removes a whole emoji sequence", () => {
+    const n = input({ cursor: 1, value: "a👍🏽b" })
+    n.actions["input.deleteCharForward"]()
+    expect(n.state.value).toBe("ab")
+    expect(n.state.cursor).toBe(1)
+  })
 })
 
 describe("Input.actions — cursor motion", () => {
@@ -305,6 +326,46 @@ describe("Input.actions — cursor motion", () => {
     expect(n.state.cursor).toBe(1)
     n.actions["input.cursorUp"]()
     expect(n.state.cursor).toBe(1)
+  })
+
+  test("cursorLeft / cursorRight step over a whole grapheme", () => {
+    const n = input({ cursor: 1, value: "a👨‍👩‍👧𠮟b" })
+    n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(9) // past the 8-unit family emoji
+    n.actions["input.cursorRight"]()
+    expect(n.state.cursor).toBe(11) // past the surrogate pair
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(9)
+    n.actions["input.cursorLeft"]()
+    expect(n.state.cursor).toBe(1)
+  })
+
+  test("cursorUp / cursorDown keep the visual column across wide chars", () => {
+    const n = input({ cursor: 8, value: "日本語\nabcdef" }) // after "abcd"
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(2) // after "日本", 4 cells in
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(8)
+  })
+
+  test("cursorUp onto the right half of a wide char lands on that char", () => {
+    const n = input({ cursor: 7, value: "日本語\nabcdef" }) // after "abc"
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(1) // on 本, which covers cells 2-3
+  })
+
+  test("cursorDown through a line of wide chars restores the visual column", () => {
+    const n = input({ cursor: 3, value: "abcdef\n日本語\nabcdef" })
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(8) // on 本
+    n.actions["input.cursorDown"]()
+    expect(n.state.cursor).toBe(14)
+  })
+
+  test("cursorUp counts a tab as its rendered width", () => {
+    const n = input({ cursor: 7, value: "\tx\nabcdefg" }) // after "abcd"
+    n.actions["input.cursorUp"]()
+    expect(n.state.cursor).toBe(1) // on x, past the 4-cell tab
   })
 })
 
