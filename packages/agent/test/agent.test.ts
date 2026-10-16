@@ -334,3 +334,80 @@ describe("Agent — loop detection", () => {
     expect(result.stopReason).toBe("loop-detected")
   })
 })
+
+describe("Agent — permission prompt status", () => {
+  const Gated = defineTool({
+    async call() {
+      return "ok"
+    },
+    desc: "A tool that needs the user's approval.",
+    name: "gated",
+    params: Type.Object({}),
+    async preflight(_args, ctx) {
+      await ctx.need?.("read", "/etc/shadow")
+    },
+  })
+
+  test("reports `waiting` while the prompt is open, then resumes", async () => {
+    // The status is how UIs (and the tmux pane indicator) tell "working" from
+    // "needs you" — a permission prompt can sit open indefinitely, so it can't
+    // stay `running-tools`.
+    const model = mockModel([
+      [
+        { id: "c1", name: "gated", params: {}, type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 5, output: 3 } },
+      ],
+      [
+        { delta: "done", type: "text-delta" },
+        { finishReason: "stop", type: "finish", usage: { input: 5, output: 3 } },
+      ],
+    ])
+    const seen: string[] = []
+    const statuses: string[] = []
+    const agent = await loadAgent({
+      allow: async () => {
+        seen.push(agent.status)
+        return true
+      },
+      messages: [{ content: "go", role: "user" }],
+      model,
+      tools: [Gated],
+    })
+
+    agent.on("status", ({ status }) => statuses.push(status))
+
+    const stop = await agent.run()
+
+    expect(stop).toBe("natural")
+    // The prompt was raised while the run was reported as waiting…
+    expect(seen).toEqual(["waiting"])
+    expect(statuses).toContain("waiting")
+    // …and the run went back to work afterwards rather than staying waiting.
+    expect(statuses.at(-1)).toBe("idle")
+    expect(statuses.indexOf("waiting")).toBeLessThan(statuses.lastIndexOf("running-tools"))
+  })
+
+  test("restores the previous status when the prompt throws", async () => {
+    const model = mockModel([
+      [
+        { id: "c1", name: "gated", params: {}, type: "tool-call" },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 5, output: 3 } },
+      ],
+    ])
+    const agent = await loadAgent({
+      allow: async () => {
+        throw new Error("prompt exploded")
+      },
+      messages: [{ content: "go", role: "user" }],
+      model,
+      tools: [Gated],
+    })
+    const statuses: string[] = []
+    agent.on("status", ({ status }) => statuses.push(status))
+
+    await agent.run()
+
+    expect(statuses).toContain("waiting")
+    expect(statuses.at(-1)).not.toBe("waiting")
+  })
+})

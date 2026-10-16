@@ -16,6 +16,8 @@ describe("tmuxStatus", () => {
     // Errors, aborts and `max-steps` all land on `paused` — the agent stopped
     // without finishing, which is what `waiting` means.
     expect(tmuxStatus("paused")).toBe("waiting")
+    // An open permission prompt is also "needs you", not "working".
+    expect(tmuxStatus("waiting")).toBe("waiting")
   })
 })
 

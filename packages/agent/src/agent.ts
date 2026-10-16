@@ -790,13 +790,24 @@ export class Agent extends Emitter<AgentEvents> {
     const r = perms.validate(scope, input)
     if (r.verdict === "allow") return
     if (r.verdict === "ask" && this.#opts.allow) {
-      const ok = await this.#opts.allow({
-        ask: r.ask,
-        input,
-        reason: r.reason,
-        scope,
-        suggestions: r.suggestions,
-      })
+      // Reported as its own status: the run is suspended on the user, which is
+      // a different thing from the surrounding tool execution and can last
+      // indefinitely. UIs use it to surface "needs you" (the tmux pane
+      // indicator maps it to `waiting`), so it has to cover the wait itself.
+      const prev = this.#status
+      this.#setStatus("waiting")
+      let ok: boolean
+      try {
+        ok = await this.#opts.allow({
+          ask: r.ask,
+          input,
+          reason: r.reason,
+          scope,
+          suggestions: r.suggestions,
+        })
+      } finally {
+        this.#setStatus(prev)
+      }
       if (ok) return
     }
     throw new AiError({

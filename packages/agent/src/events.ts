@@ -4,8 +4,16 @@ import type { Message, StreamEvent, TokenCount, Tool, ToolCallPart, ToolResult }
 
 /** Status of an agent session — at most one transition per moment.
  *  `paused` covers both explicit pause and post-error states; the
- *  `lastError` field on the session disambiguates. */
-export type AgentStatus = "idle" | "streaming" | "running-tools" | "compacting" | "paused"
+ *  `lastError` field on the session disambiguates. `waiting` is set while
+ *  a permission prompt is open: the run is suspended on the user, which can
+ *  last indefinitely (unlike `running-tools`, which is active work). */
+export type AgentStatus =
+  | "idle"
+  | "streaming"
+  | "running-tools"
+  | "compacting"
+  | "waiting"
+  | "paused"
 
 /** Reason the loop stopped this turn. Distinct from the provider's
  *  `finishReason` (which describes why one round-trip ended). */

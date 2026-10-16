@@ -31,7 +31,8 @@ import { join } from "node:path"
 export type TmuxStatus = "busy" | "waiting" | "done" | "clear"
 
 /** zaly's status → the indicator. `paused` covers errors, aborts and
- *  `max-steps`: the agent stopped without finishing, so it wants attention. */
+ *  `max-steps`: the agent stopped without finishing, so it wants attention.
+ *  `waiting` is an open permission prompt — the run is suspended on the user. */
 export function tmuxStatus(status: AgentStatus): TmuxStatus {
   switch (status) {
     case "streaming": {
@@ -42,6 +43,9 @@ export function tmuxStatus(status: AgentStatus): TmuxStatus {
     }
     case "compacting": {
       return "busy"
+    }
+    case "waiting": {
+      return "waiting"
     }
     case "idle": {
       return "done"
