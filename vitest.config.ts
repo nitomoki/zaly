@@ -3,7 +3,8 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
-const pkgDir = join(fileURLToPath(import.meta.url), "../packages")
+const rootDir = join(fileURLToPath(import.meta.url), "..")
+const pkgDir = join(rootDir, "packages")
 const packages = readdirSync(pkgDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name)
@@ -25,12 +26,23 @@ export default defineConfig({
     coverage: {
       include: [`${pkgDir}/*/src/**/*.ts`],
     },
-    projects: packages.map((name) => ({
-      extends: true,
-      test: {
-        name: `@zaly/${name}`,
-        root: `${pkgDir}/${name}`,
+    projects: [
+      ...packages.map((name) => ({
+        extends: true,
+        test: {
+          name: `@zaly/${name}`,
+          root: `${pkgDir}/${name}`,
+        },
+      })),
+      // Local plugin workspace. Not published, but tested the same way so a
+      // plugin the fork depends on can't rot unnoticed.
+      {
+        extends: true,
+        test: {
+          name: "@zaly/plugins",
+          root: join(rootDir, "plugins"),
+        },
       },
-    })),
+    ],
   },
 })

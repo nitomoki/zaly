@@ -171,6 +171,13 @@ export default defineConfig({
       },
     },
     {
+      // Plugin tests import the plugin they cover from a sibling directory.
+      files: ["plugins/tests/**/*.ts", "plugins/*/tests/**/*.ts"],
+      rules: {
+        "no-restricted-imports": "off",
+      },
+    },
+    {
       files: ["*.vue"],
       rules: {
         "unicorn/filename-case": "off",
