@@ -1,7 +1,24 @@
+import type { Harness } from "./harness.ts"
+
 import { describe, expect, test } from "vitest"
 import { input } from "../../src/widgets/input.ts"
 import { text } from "../../src/widgets/text.ts"
 import { makeHarness } from "./harness.ts"
+
+/** A single node tall enough to wrap many times at the initial width, so
+ *  history commits and the node's row count depends on the terminal width. */
+function tallBody(blocks = 12): string {
+  const wrap = "brown fox ".repeat(4)
+  return Array.from({ length: blocks }, (_, i) => `block-${i + 1} ${wrap}`).join("\n")
+}
+
+/** Fill the stream with a node that will un-wrap when the terminal widens. */
+async function tallStream(cols: number, rows: number): Promise<Harness> {
+  const h = await makeHarness({ cols, rows, scrollback: 500 })
+  h.renderer.stream.append(() => text(tallBody(), { wrap: "word" }))
+  await h.flush()
+  return h
+}
 
 describe("Renderer — resize", () => {
   test("stream rows re-render at new width after resize", async () => {
@@ -105,6 +122,52 @@ describe("Renderer — resize", () => {
     // 10-row buffer) is gone; remaining content is bottom-anchored.
     expect(v.length).toBe(4)
     expect(v[3]).toBe("gamma")
+    h.dispose()
+  })
+
+  test("widening re-renders committed history instead of blanking", async () => {
+    // Regression: rows that had already committed to scrollback (and states
+    // dropped from the live window) used to leave the screen empty after a
+    // widen. The un-wrapped re-render is shorter than the recorded commit
+    // count, so nothing looked repaint-worthy; on top of that the row count
+    // was padded back to the old height, which the bottom-anchored visible
+    // slice then showed as blanks.
+    const h = await tallStream(30, 8)
+    expect(h.viewport().length).toBe(8)
+    expect(h.viewport().filter(Boolean).length).toBe(8)
+
+    await h.resize(90, 8)
+    const v = h.viewport()
+    expect(v.filter(Boolean).length).toBe(8)
+    // Re-rendered at the wider width: each block fits on one row now.
+    expect(v.at(-1)).toContain("block-12")
+    expect(v.some((row) => row.includes("block-"))).toBe(true)
+    h.dispose()
+  })
+
+  test("narrowing after widening still re-wraps committed history", async () => {
+    const h = await tallStream(90, 8)
+    await h.resize(30, 8)
+    const v = h.viewport()
+    expect(v.filter(Boolean).length).toBe(8)
+    expect(v.join(" ")).toContain("block-12")
+    h.dispose()
+  })
+
+  test("a re-render that fits the screen adds nothing to scrollback", async () => {
+    // 8 blocks wrap to 16 rows at 30 cols (8 of them above the fold, so they
+    // commit) and fit in the 8-row viewport at 90 cols. The resize re-render
+    // must repaint, not re-commit rows that are already in history.
+    const h = await makeHarness({ cols: 30, rows: 8, scrollback: 500 })
+    h.renderer.stream.append(() => text(tallBody(8), { wrap: "word" }))
+    await h.flush()
+    const before = h.scrollback().length
+    expect(before).toBeGreaterThan(0)
+
+    await h.resize(90, 8)
+    await h.flush()
+    expect(h.scrollback().length).toBe(before)
+    expect(h.viewport().filter(Boolean).length).toBe(8)
     h.dispose()
   })
 })

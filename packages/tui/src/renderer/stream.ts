@@ -567,16 +567,43 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Terminal was resized. Forget only the paint mirror that mapped stream
-   * rows onto the old screen geometry. App scrollback and per-state commit
-   * boundaries are preserved; retained nodes re-render at the new width
-   * through Node.render()'s cache key.
+   * Terminal was resized. The renderer has already wiped the screen and the
+   * nodes' caches were invalidated by the ctx version bump, so all we have
+   * to do is drop the bookkeeping that is now measured against the old
+   * geometry, and let the re-render rebuild it at the new width.
    *
-   * Paired with a screen-clear in the Renderer's resize handler — this
-   * method only resets our mirror of what's on screen; the actual wipe
-   * and re-establishment of DECSTBM lives in the terminal-level handler.
+   * Commit boundaries are row counts taken at the old width, and a state can
+   * produce *fewer* rows after a re-render (a line that used to wrap now
+   * fits). That leaves `commit` larger than the state's rows, which makes
+   * the next pass believe every row is already on screen — after a screen
+   * clear that means nothing gets repainted and the terminal stays blank.
+   * So reset every state to uncommitted.
+   *
+   * `#scrollback` holds rows rendered at the old width, so it is dropped for
+   * the same reason: they can neither be reflowed nor painted into the new
+   * geometry. What remains scrollable is whatever the retained nodes can
+   * still re-render, which by construction covers the visible region —
+   * `fixedFooterHeight` keeps exactly the on-screen rows uncommitted — and
+   * `#scrollTop` snaps back to the live bottom.
+   *
+   * Paired with a screen-clear in the Renderer's resize handler: this method
+   * only resets our mirror of what's on screen; the wipe and the
+   * re-establishment of DECSTBM live in the terminal-level handler.
    */
   onResize(): void {
+    this.#scrollback = []
+    this.#scrollTop = 0
+    this.#snapshot.historyLength = 0
+    for (const s of this.#state) {
+      s.commit = 0
+      // Drop the rendered rows too. `#render` pads a shrunken node back to its
+      // previous row count so stale rows get cleared — correct while the
+      // geometry is stable, wrong across a resize: an un-wrapped re-render is
+      // shorter, the padding lands at the bottom, and the bottom-anchored
+      // visible slice is exactly that padding. Rendering from scratch also
+      // lets a node that grew (more wrapping) use its full height.
+      s.rows = undefined
+    }
     this.resetPaint()
   }
 
