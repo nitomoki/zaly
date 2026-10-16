@@ -60,6 +60,9 @@ async function loadGhostty(): Promise<Ghostty> {
 }
 
 export interface HarnessOpts {
+  /** Enable the alternate screen (fullscreen mode). Default: false, i.e.
+   *  scrollback mode, where committed rows go to the terminal's scrollback. */
+  altScreen?: boolean
   defaultStyle?: RendererOptions["defaultStyle"]
   theme?: RendererOptions["theme"]
   transparent?: RendererOptions["transparent"]
@@ -149,6 +152,7 @@ export async function makeHarness(opts: HarnessOpts = {}): Promise<Harness> {
   }
 
   const renderer = new Renderer({
+    altScreen: opts.altScreen,
     defaultStyle: opts.defaultStyle,
     theme: opts.theme,
     transparent: opts.transparent,

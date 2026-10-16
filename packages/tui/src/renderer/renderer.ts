@@ -33,7 +33,6 @@ import { defaultActions } from "../input/defaults.ts"
 import { TerminalQueries } from "../input/queries.ts"
 import { InputRouter } from "../input/router.ts"
 import { TuiReporter } from "../services/logger.ts"
-import { RESET } from "../style/ansi.ts"
 import { styleBuilder as buildStyle } from "../style/builder.ts"
 import { openStyle } from "../style/style.ts"
 import { defaultTheme } from "../themes/registry.ts"
@@ -264,35 +263,32 @@ export class Renderer extends Emitter<RenderEvents> {
 
     // SIGWINCH: dimensions changed. The terminal has re-wrapped its
     // existing content against the new column count; our on-screen
-    // positioning bookkeeping (stream's `#rows`/`#scrollbackCount`,
-    // ui's `#rows`) is from before the resize and no longer maps to
-    // what's really painted. Cleanest recovery:
+    // positioning bookkeeping (stream's `#scrollbackCount`, ui's
+    // `#rows`) is from before the resize and no longer maps to what's
+    // really painted. Recovery:
     //
     //   1. Bump `ctxVersion` + drop cached `#ctx` so every node's
     //      cache self-invalidates and re-renders at the new width on
     //      the next pass.
-    //   2. Clear the scroll region (DECSTBM defaults to full viewport)
-    //      then wipe the screen with ED. The UI surface's next render
-    //      will reissue DECSTBM against the new row count.
+    //   2. Reissue DECSTBM against the new row count. The surfaces'
+    //      next render repaints every row they own (each row write
+    //      clears its line first) and explicitly clears any it no
+    //      longer covers, so the old bytes are overwritten in place.
     //   3. Tell both surfaces to forget their paint mirrors
     //      (`onResize`). Node state is preserved — we still have every
     //      stream node — so the re-render just replays them from
     //      scratch at the new geometry.
+    //
+    // Note the screen is deliberately *not* wiped here. `ED` on a
+    // terminal with scroll-on-clear (tmux sets it) pushes the whole
+    // screen into scrollback, so the rows repainted below would land in
+    // history a second time. Repainting in place leaves history alone.
     this.terminal.onResize(() => {
       this.#ctxVersion++
       this.#ctx = undefined
       this.terminal.sync(() => {
-        // Drop DECSTBM so ED clears the entire display (some terminals
-        // honour the region for ED; full reset avoids ambiguity), wipe
-        // the screen, then reissue DECSTBM against the NEW row count
-        // if a footer is reserved. `setReserveBottom` would early-return
-        // (the stored `#reserveBottom` hasn't changed), so we bypass it
-        // and talk to `setScrollRegion` directly.
-        this.terminal.clearScrollRegion()
-        const defaults = this.frame.defaultStyle
-        this.terminal.write(
-          `${defaults ? RESET + defaults : ""}${this.terminal.moveTo(1, 1)}\x1b[2J${defaults ? RESET : ""}`
-        )
+        // `setReserveBottom` early-returns (the stored `#reserveBottom`
+        // hasn't changed), so talk to `setScrollRegion` directly.
         if (this.terminal.reserveBottom > 0) {
           this.terminal.setScrollRegion(1, this.terminal.scrollBottom)
         }

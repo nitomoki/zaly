@@ -226,3 +226,25 @@ describe("renderer hardware cursor", () => {
     r.stop()
   })
 })
+
+describe("renderer resize", () => {
+  test("repaints in place instead of wiping the screen", async () => {
+    // `ED` on a terminal with scroll-on-clear (tmux enables it) pushes the
+    // whole screen into scrollback, so the rows repainted right after would
+    // land in history a second time. Resize must not emit it.
+    const stdout = new MockWriter(40, 10)
+    const r = await createRenderer({ hookSignals: false, stdin: new MockReader(), stdout })
+    r.start()
+    r.stream.append(() => text("before resize"))
+    await r.render()
+    stdout.clear()
+
+    stdout.columns = 60
+    void process.emit("SIGWINCH")
+    await r.render()
+    expect(stdout.all).not.toContain("\x1b[2J")
+    // The region is still reissued against the new geometry.
+    expect(stdout.all).toContain("\x1b[1;")
+    r.stop()
+  })
+})

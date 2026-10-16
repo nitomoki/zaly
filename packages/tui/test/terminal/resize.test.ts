@@ -126,12 +126,11 @@ describe("Renderer — resize", () => {
   })
 
   test("widening re-renders committed history instead of blanking", async () => {
-    // Regression: rows that had already committed to scrollback (and states
-    // dropped from the live window) used to leave the screen empty after a
-    // widen. The un-wrapped re-render is shorter than the recorded commit
-    // count, so nothing looked repaint-worthy; on top of that the row count
-    // was padded back to the old height, which the bottom-anchored visible
-    // slice then showed as blanks.
+    // Regression: rows that had already committed to scrollback used to leave
+    // the screen empty after a widen. The un-wrapped re-render is shorter than
+    // the recorded commit count, so nothing looked repaint-worthy; on top of
+    // that the row count was padded back to the old height, which the
+    // bottom-anchored visible slice then showed as blanks.
     const h = await tallStream(30, 8)
     expect(h.viewport().length).toBe(8)
     expect(h.viewport().filter(Boolean).length).toBe(8)
@@ -142,6 +141,70 @@ describe("Renderer — resize", () => {
     // Re-rendered at the wider width: each block fits on one row now.
     expect(v.at(-1)).toContain("block-12")
     expect(v.some((row) => row.includes("block-"))).toBe(true)
+    h.dispose()
+  })
+
+  test("widening keeps history addressable", async () => {
+    // Regression: dropping `#scrollback` on resize left only the on-screen
+    // rows behind, so scrolling up stopped at the top of the viewport. In
+    // fullscreen there is no terminal scrollback to recover from.
+    for (const altScreen of [false, true]) {
+      const h = await makeHarness({ altScreen, cols: 30, rows: 8, scrollback: 500 })
+      for (let i = 1; i <= 30; i++) {
+        h.renderer.stream.append(() => text(`msg-${i}`))
+        await h.flush()
+      }
+      const before = h.renderer.stream.getRow(1)
+      expect(before).toContain("msg-1")
+
+      await h.resize(90, 8)
+      expect(h.renderer.stream.getRow(1)).toContain("msg-1")
+      h.dispose()
+    }
+  })
+
+  test("resize never writes a row to scrollback twice", async () => {
+    // Regression: resetting each state's commit count on resize re-sent rows
+    // that were already in the terminal's scrollback.
+    const h = await makeHarness({ cols: 30, rows: 8, scrollback: 500 })
+    h.renderer.stream.append(() => text(tallBody(), { wrap: "word" }))
+    await h.flush()
+    const before = h.scrollback()
+    expect(before.length).toBeGreaterThan(0)
+
+    await h.resize(90, 8)
+    await h.flush()
+    const after = h.scrollback()
+    expect(after).toEqual(before)
+    // Spot-check the content too: duplicate entries would show up here even if
+    // the counts happened to line up.
+    const oldest = before[0]
+    expect(after.filter((row) => row === oldest)).toHaveLength(1)
+    h.dispose()
+  })
+
+  test("a resize keeps every message, exactly once, in scrollback", async () => {
+    // The row boundary can't be carried across a re-wrap: rows that were
+    // partially committed re-render to a different count. Counting content
+    // instead of rows is what keeps a resize from either re-sending the
+    // already-written part or dropping the part that was still live.
+    const h = await makeHarness({ cols: 30, rows: 8, scrollback: 2000 })
+    h.renderer.stream.append(() => text(tallBody(6), { wrap: "word" }))
+    await h.flush()
+    expect(h.scrollback().length).toBeGreaterThan(0)
+
+    // Widen, then let more messages flow so everything old scrolls off.
+    await h.resize(90, 8)
+    for (let i = 7; i <= 20; i++) {
+      h.renderer.stream.append(() => text(`block-${i} ${"brown fox ".repeat(4)}`, { wrap: "word" }))
+      await h.flush()
+    }
+
+    const rows = [...h.scrollback(), ...h.viewport()]
+    for (let i = 1; i <= 20; i++) {
+      const hits = rows.filter((row) => row.includes(`block-${i} `))
+      expect({ block: i, hits: hits.length }).toEqual({ block: i, hits: 1 })
+    }
     h.dispose()
   })
 

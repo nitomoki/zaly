@@ -6,6 +6,7 @@ import type { Renderer } from "./renderer.ts"
 import type { Point } from "./surface.ts"
 import type { Terminal } from "./terminal.ts"
 
+import { stripAnsi } from "@zaly/shared/ansi"
 import { throttle } from "@zaly/shared/throttle"
 import {
   createNode,
@@ -43,8 +44,16 @@ type StreamRenderPlan = {
 type RenderState = {
   /** Rows from this state that have already entered terminal scrollback.
    *  Scrollback is immutable, so later renders may only replace rows after
-   *  this committed prefix. */
+   *  this committed prefix. Re-derived from `written` after a re-layout. */
   commit: number
+  /** Non-whitespace glyphs of this state that are already in scrollback.
+   *  Re-wrapping moves spaces and row breaks around but never the glyphs, so
+   *  this is the layout-independent record of "what history holds" and the
+   *  only thing that survives a resize intact. */
+  written: number
+  /** Set when the layout changed (resize) and `commit` has to be re-derived
+   *  from `written` against the freshly rendered rows. */
+  reflow: boolean
   dirty: boolean
   live: boolean
   node: Node
@@ -106,6 +115,30 @@ function findFrozenPrefixEnd(rendered: string[], frozen: string[]): number {
     if (match) return start + frozen.length
   }
   return frozen.length
+}
+
+/** Non-whitespace glyphs in a row, ignoring ANSI and image payloads.
+ *
+ *  Wrapping only ever moves whitespace (spaces become row breaks, and back),
+ *  so a count of the remaining glyphs identifies how much of a node's content
+ *  a set of rows covers — at any width. That makes it the right yardstick for
+ *  "this much of the node is already in scrollback" across a re-layout, where
+ *  row counts are meaningless. */
+function glyphs(row: string): number {
+  let count = 0
+  for (const char of stripAnsi(row)) if (char !== " " && char !== "\t") count++
+  return count
+}
+
+/** How many of `rows` cover the first `glyphCount` glyphs of their content. */
+function writtenRows(rows: readonly string[], glyphCount: number): number {
+  if (glyphCount <= 0) return 0
+  let seen = 0
+  for (let i = 0; i < rows.length; i++) {
+    seen += glyphs(rows[i] ?? "")
+    if (seen >= glyphCount) return i + 1
+  }
+  return rows.length
 }
 
 const SCROLL_DURATION = 120
@@ -185,6 +218,8 @@ export class Stream extends Surface<StreamEvents> {
         return this.boundary.active() || this.dirty || !!this.node.state.sticky
       },
       node: resolved,
+      reflow: false,
+      written: 0,
     }
 
     this.#state.push(state)
@@ -372,6 +407,15 @@ export class Stream extends Surface<StreamEvents> {
 
   async _render(frame: RenderFrame): Promise<void> {
     const { commitLimit, rows: allRows } = await this.#render()
+    // Re-derive the row boundary for any state whose layout changed. `written`
+    // is counted in glyphs, which a re-wrap doesn't change, so the new
+    // boundary lands on the same content: no row is written to scrollback
+    // twice, and none is skipped.
+    for (const s of this.#state) {
+      if (!s.reflow) continue
+      s.reflow = false
+      s.commit = writtenRows(s.rows ?? [], s.written)
+    }
     const old = this.#snapshot
     const liveHeight = this.liveHeight
     const committed = this.#committedRows()
@@ -384,7 +428,15 @@ export class Stream extends Surface<StreamEvents> {
     // shrinks back. `fixedFooterHeight = 0` reduces to "commit at the
     // full terminal" (old behavior).
     const commitThreshold = Math.max(1, this.terminal.rows - this.#opts.fixedFooterHeight)
-    const liveStart = Math.min(commitLimit, Math.max(committed, allRows.length - commitThreshold))
+    let liveStart = Math.min(commitLimit, Math.max(committed, allRows.length - commitThreshold))
+    // Keep a full screen live. After a resize that widened the terminal the
+    // re-rendered rows can be fewer than what already went to scrollback, so
+    // there may be no uncommitted rows left to paint; those rows can't be
+    // recalled from scrollback, so fall back to the tail of what the nodes can
+    // still render. `liveStart < committed` makes the commit slice below
+    // empty, so the rows pulled back are painted but never written twice.
+    const minLiveStart = Math.max(0, allRows.length - liveHeight)
+    if (liveStart > minLiveStart) liveStart = minLiveStart
     const commit = allRows.slice(committed, liveStart)
     this.#scrollback.push(...commit)
     const liveRows = allRows.slice(liveStart)
@@ -443,8 +495,8 @@ export class Stream extends Surface<StreamEvents> {
     this.#paint(plan)
 
     this.#snapshot = next
-    this.#advanceCommits(commit.length)
-    this.#dropCommittedStates()
+    this.#advanceCommits(commit)
+    this.#dropCommittedStates(liveStart)
 
     if (!this.pending) void this.emit("idle")
   }
@@ -525,37 +577,50 @@ export class Stream extends Surface<StreamEvents> {
     }
   }
 
-  #advanceCommits(commitCount: number): void {
+  #advanceCommits(commit: readonly string[]): void {
     // Mark newly-promoted rows on their owning states. This keeps the
     // immutable scrollback boundary local to each retained node, so later
     // mutations above the boundary can't shift already-promoted rows and
     // make us write the same semantic row to scrollback again.
-    let remaining = commitCount
+    let i = 0
     for (const s of this.#state) {
-      if (remaining <= 0) break
+      if (i >= commit.length) break
       const len = s.rows?.length ?? 0
-      const n = Math.min(remaining, Math.max(0, len - s.commit))
+      const n = Math.min(commit.length - i, Math.max(0, len - s.commit))
+      if (n <= 0) continue
+      for (let j = 0; j < n; j++) s.written += glyphs(commit[i + j] ?? "")
       s.commit += n
-      remaining -= n
+      i += n
     }
   }
 
-  #dropCommittedStates(): void {
+  #dropCommittedStates(paintStart: number): void {
     // Drop states whose rows have entirely entered scrollback. Their
     // committed rows leave `allRows` on the next tick; the global committed
     // count is derived from retained states, so no separate adjustment is
     // needed.
+    let offset = 0
     while (this.#state.length > 0) {
       const first = this.#state[0]
       const len = first.rows?.length ?? 0
-      if (first.live || first.commit < len) break
+      const end = offset + len
+      // A state is only forgettable once every one of its rows is both in
+      // scrollback and above the painted window. A resize can leave a stale
+      // count (larger than what the node renders now) or pull rows back into
+      // the window; dropping either would shrink `allRows` under the region.
+      if (first.live || first.commit < len || end > paintStart) break
       this.#state.shift()
       first.freeze()
+      offset = end
     }
   }
 
   #committedRows(): number {
-    return this.#state.reduce((sum, s) => sum + s.commit, 0)
+    // Cap each state at what it currently renders. `commit` is re-derived from
+    // content on a resize, but a state can still hold a boundary from a
+    // layout that no longer exists, and that must not push the write boundary
+    // past rows that were never written.
+    return this.#state.reduce((sum, s) => sum + Math.min(s.commit, s.rows?.length ?? 0), 0)
   }
 
   get pending() {
@@ -567,41 +632,31 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Terminal was resized. The renderer has already wiped the screen and the
-   * nodes' caches were invalidated by the ctx version bump, so all we have
-   * to do is drop the bookkeeping that is now measured against the old
-   * geometry, and let the re-render rebuild it at the new width.
+   * Terminal was resized. The renderer has already wiped the screen and
+   * invalidated every node cache (ctx version bump), so the surface only has
+   * to drop the bookkeeping that is measured against the old geometry and let
+   * the re-render rebuild it at the new width.
    *
-   * Commit boundaries are row counts taken at the old width, and a state can
-   * produce *fewer* rows after a re-render (a line that used to wrap now
-   * fits). That leaves `commit` larger than the state's rows, which makes
-   * the next pass believe every row is already on screen — after a screen
-   * clear that means nothing gets repainted and the terminal stays blank.
-   * So reset every state to uncommitted.
+   * History is deliberately *kept*:
    *
-   * `#scrollback` holds rows rendered at the old width, so it is dropped for
-   * the same reason: they can neither be reflowed nor painted into the new
-   * geometry. What remains scrollable is whatever the retained nodes can
-   * still re-render, which by construction covers the visible region —
-   * `fixedFooterHeight` keeps exactly the on-screen rows uncommitted — and
-   * `#scrollTop` snaps back to the live bottom.
+   *  - `#scrollback` holds the rows that already scrolled off (at the old
+   *    width — a terminal can't reflow either). Dropping it would lose them
+   *    for good: in fullscreen there is no native scrollback to fall back on,
+   *    and in scrollback mode the terminal's copy is out of our reach.
+   *  - `written` records, in glyphs, how much of each state is in scrollback.
+   *    Row counts are meaningless after a re-wrap, so the boundary is
+   *    re-derived from this once the nodes have re-rendered (`reflow`).
+   *    Resetting it instead would write those rows to scrollback a second
+   *    time.
    *
-   * Paired with a screen-clear in the Renderer's resize handler: this method
-   * only resets our mirror of what's on screen; the wipe and the
-   * re-establishment of DECSTBM live in the terminal-level handler.
+   * What's dropped is the rendered rows, because `#render` pads a shrunken
+   * node back to its previous count — padding that the bottom-anchored
+   * visible slice would otherwise show as blank. Re-rendering from scratch
+   * also lets a node that grew (more wrapping) use its full height.
    */
   onResize(): void {
-    this.#scrollback = []
-    this.#scrollTop = 0
-    this.#snapshot.historyLength = 0
     for (const s of this.#state) {
-      s.commit = 0
-      // Drop the rendered rows too. `#render` pads a shrunken node back to its
-      // previous row count so stale rows get cleared — correct while the
-      // geometry is stable, wrong across a resize: an un-wrapped re-render is
-      // shorter, the padding lands at the bottom, and the bottom-anchored
-      // visible slice is exactly that padding. Rendering from scratch also
-      // lets a node that grew (more wrapping) use its full height.
+      s.reflow = true
       s.rows = undefined
     }
     this.resetPaint()
@@ -626,7 +681,11 @@ export class Stream extends Surface<StreamEvents> {
     this.#scrollback = []
     this.#snapshot.historyLength = 0
     this.#scrollTop = 0
-    for (const s of this.#state) s.commit = 0
+    for (const s of this.#state) {
+      s.commit = 0
+      s.written = 0
+      s.reflow = false
+    }
     if (!opts.keepNodes) {
       for (const s of this.#state) s.freeze()
       this.#state = []
