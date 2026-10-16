@@ -38,7 +38,7 @@ import { styleBuilder as buildStyle } from "../style/builder.ts"
 import { openStyle } from "../style/style.ts"
 import { defaultTheme } from "../themes/registry.ts"
 import { systemTheme } from "../themes/system.ts"
-import { Frame } from "./frame.ts"
+import { CURSOR_MARKER, Frame } from "./frame.ts"
 import { OverlaySurface } from "./overlay.ts"
 import { SelectionLayer } from "./selection.ts"
 import { Stream } from "./stream.ts"
@@ -320,6 +320,7 @@ export class Renderer extends Emitter<RenderEvents> {
       this.#ctx.width !== this.terminal.cols
     ) {
       this.#ctx = createCtx({
+        cursorMarker: CURSOR_MARKER,
         theme: peek(this.#theme.get), // Untrack to prevent dep leaks from `ctx.theme` reads in render.
         transmit: (seq) => this.terminal.enqueueTransmit(seq),
         version: this.#ctxVersion,
@@ -608,8 +609,10 @@ export class Renderer extends Emitter<RenderEvents> {
     // the frame body reference them by id and just need them to have
     // arrived first.
     this.terminal.flushTransmits()
+    const cursor = frame.takeCursor()
     this.terminal.sync(() => {
       const s = frame.paint()
+      if (cursor) this.terminal.write(this.terminal.moveTo(cursor.row, cursor.col))
       this.stats.inc("paint-ops", s.ops)
       this.stats.inc("paint-rows", s.rows)
     })

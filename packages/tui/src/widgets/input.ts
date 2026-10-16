@@ -537,7 +537,7 @@ export class Input extends Node<InputState, InputEvents> {
       const head = sliceAnsi(row, 0, col)
       const at = sliceAnsi(row, col, end) || " "
       const tail = sliceAnsi(row, end)
-      lines[target] = head + ctx.style.inverse(at) + tail
+      lines[target] = head + (ctx.cursorMarker ?? "") + ctx.style.inverse(at) + tail
       content = lines.join("\n")
     }
 

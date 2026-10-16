@@ -33,6 +33,11 @@ export interface RenderCtx {
    *  returns should be safe to reuse across paints, and transmit
    *  bytes shouldn't be. */
   readonly transmit: (seq: string) => void
+  /** Zero-width sequence a focused `Input` embeds at its caret. The
+   *  renderer strips it before painting and parks the hidden terminal
+   *  cursor there, because IMEs draw their preedit at the terminal
+   *  cursor. Unset outside a renderer. */
+  readonly cursorMarker?: string
 }
 
 /**

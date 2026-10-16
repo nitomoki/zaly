@@ -715,6 +715,21 @@ describe("Input — render", () => {
     })
   })
 
+  test("focused input embeds ctx.cursorMarker right before the cursor cell", async () => {
+    const n = input({ cursor: 1, value: "日本語" })
+    n.mount(mockMountCtx("ui"))
+    void n.emit("focus")
+    const rows = await n.render({ ...markCtx(40), cursorMarker: "<M>" })
+    expect(rows).toEqual(["日<M>[本]語"])
+  })
+
+  test("unfocused input leaves ctx.cursorMarker out", async () => {
+    const n = input({ value: "abc" })
+    n.mount(mockMountCtx("ui"))
+    const rows = await n.render({ ...markCtx(40), cursorMarker: "<M>" })
+    expect(rows).toEqual(["abc"])
+  })
+
   test("word-wraps a long line across multiple rows", async () => {
     const n = input({ value: "hello world foo bar" })
     const rows = await n.render(ctx(10))

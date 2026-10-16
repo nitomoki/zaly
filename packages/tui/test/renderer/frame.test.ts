@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "vitest"
 import { createCtx } from "../../src/core/ctx.ts"
-import { Frame } from "../../src/renderer/frame.ts"
+import { CURSOR_MARKER, Frame } from "../../src/renderer/frame.ts"
 import { Terminal } from "../../src/renderer/terminal.ts"
 import { defaultTheme } from "../../src/themes/registry.ts"
 import { MockReader, MockWriter } from "./mock.ts"
@@ -92,6 +92,21 @@ describe("RenderFrame.slice", () => {
     expect(frame.slice(1, -10, 4)).toEqual({ from: 1, line: "hello", to: 4 })
     expect(frame.slice(1, 5, 5)).toBeUndefined()
     expect(frame.slice(10, 1, 2)).toBeUndefined()
+  })
+})
+
+describe("RenderFrame.takeCursor", () => {
+  test("strips the cursor marker and returns its 1-based screen cell", () => {
+    const { frame } = testFrame()
+    frame.set(3, `> 日本${CURSOR_MARKER}\x1b[7m \x1b[27m`)
+    expect(frame.takeCursor()).toEqual({ col: 7, row: 3 })
+    expect(frame.get(3)).toBe("> 日本\x1b[7m \x1b[27m")
+  })
+
+  test("returns undefined when no row carries the marker", () => {
+    const { frame } = testFrame()
+    frame.set(1, "hello")
+    expect(frame.takeCursor()).toBeUndefined()
   })
 })
 

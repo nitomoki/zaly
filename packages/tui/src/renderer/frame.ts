@@ -1,8 +1,17 @@
 import type { RenderCtx } from "../core/ctx.ts"
+import type { Point } from "./surface.ts"
 import type { Terminal } from "./terminal.ts"
 
 import { sliceAnsi, stringWidth } from "@zaly/shared/ansi"
 import { applyDefaultColors, RESET, stripAnsiBg } from "../style/ansi.ts"
+
+/**
+ * Caret marker for `RenderCtx.cursorMarker`. An OSC with an unassigned
+ * number: an APC would be hoisted to the row start by `sliceAnsi`, and an
+ * invisible char like U+2063 has no agreed width if it ever reaches a
+ * terminal, while unknown OSCs are ignored.
+ */
+export const CURSOR_MARKER = "\x1b]7770;zaly-cursor\x1b\\"
 
 export type FrameOp = (terminal: Terminal) => void
 
@@ -129,6 +138,23 @@ export class RenderFrame {
 
   queue(op: FrameOp): void {
     this.#ops.push(op)
+  }
+
+  /**
+   * Strip `CURSOR_MARKER` from the rows about to be painted and return
+   * where the first one was (1-based). `base` keeps the marker, so a later
+   * frame that doesn't re-render the input's surface still finds the caret.
+   */
+  takeCursor(): Point | undefined {
+    let ret: Point | undefined
+    for (let i = 0; i < this.#next.length; i++) {
+      const row = this.#next[i]
+      const at = row.indexOf(CURSOR_MARKER)
+      if (at === -1) continue
+      ret ??= { col: stringWidth(row.slice(0, at)) + 1, row: i + 1 }
+      this.#next[i] = row.replaceAll(CURSOR_MARKER, "")
+    }
+    return ret
   }
 
   commitBase(): void {

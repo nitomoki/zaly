@@ -194,3 +194,35 @@ describe("renderer.walk — tree traversal", () => {
     expect(seen).toContain(t)
   })
 })
+
+describe("renderer hardware cursor", () => {
+  const lastMove = (out: string) => out.match(/\x1b\[\d+;\d+H/g)?.at(-1)
+
+  async function focusedInput() {
+    const stdout = new MockWriter(40, 20)
+    const r = await createRenderer({ hookSignals: false, stdin: new MockReader(), stdout })
+    const field = input({ value: "日本語" })
+    r.ui.root.add(field)
+    r.start()
+    r.input.focus(field)
+    await r.render()
+    return { r, stdout }
+  }
+
+  test("parks the hidden cursor on the focused input's caret, without the marker", async () => {
+    const { r, stdout } = await focusedInput()
+    expect(lastMove(stdout.all)).toBe("\x1b[20;7H")
+    expect(stdout.all).not.toContain("zaly-cursor")
+    r.stop()
+  })
+
+  test("moves the cursor back to the caret after a stream-only repaint", async () => {
+    const { r, stdout } = await focusedInput()
+    stdout.clear()
+    r.stream.append(() => text("hello"))
+    await r.render()
+    expect(stdout.all).toContain("hello")
+    expect(lastMove(stdout.all)).toBe("\x1b[20;7H")
+    r.stop()
+  })
+})
