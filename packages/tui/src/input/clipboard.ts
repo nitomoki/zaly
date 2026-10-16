@@ -129,11 +129,12 @@ function resetClipboardCache(): void {
  * Copy text to the system clipboard.
  *
  * Policy:
- *   - **SSH session** → always OSC 52. Native tools on the remote box
- *     would write to the remote clipboard, which isn't what the user
- *     wants. OSC 52 routes through the local terminal.
+ *   - **SSH session** → always the terminal clipboard. Native tools on
+ *     the remote box would write to the remote clipboard, which isn't
+ *     what the user wants. The terminal clipboard routes through the
+ *     local terminal.
  *   - **Native tool available** → use it (fast, silent, no prompts).
- *   - **Neither** → OSC 52 anyway, fire-and-forget.
+ *   - **Neither** → the terminal clipboard anyway, fire-and-forget.
  *
  * Resolves to `true` on best-effort delivery; `false` only when we had
  * nothing to try. OSC 52 writes are silent by design — the terminal
@@ -141,18 +142,28 @@ function resetClipboardCache(): void {
  * user's clipboard definitely has it".
  */
 async function writeClipboardText(text: string): Promise<boolean> {
-  if (isSSH) {
-    writeOsc52(text)
-    return true
-  }
+  if (isSSH) return writeTerminalClipboard(text)
   const p = getClipboard()
   if (p?.writeText) {
     try {
       if (await p.writeText(text)) return true
     } catch {
-      /* fall through to OSC 52 */
+      /* fall through to the terminal clipboard */
     }
   }
+  return writeTerminalClipboard(text)
+}
+
+/**
+ * Hand the text to the local terminal's clipboard. Inside tmux this goes
+ * through `tmux load-buffer -w` (as Neovim's tmux provider does): with
+ * tmux's default `set-clipboard external`, tmux drops OSC 52 written by
+ * applications but still forwards its own buffers to the outer terminal.
+ * `-w` needs tmux 3.2+; older tmux rejects it and we fall back to OSC 52.
+ */
+async function writeTerminalClipboard(text: string): Promise<boolean> {
+  if (process.env.TMUX && (await spawnWithInput("tmux", ["load-buffer", "-w", "-"], text)))
+    return true
   writeOsc52(text)
   return true
 }
