@@ -59,6 +59,13 @@ function markedCursorCtx(width = 40) {
   return ret
 }
 
+/** Brackets the cursor cell, so its position is visible on wide chars too. */
+function markCtx(width = 40) {
+  const ret = ctx(width)
+  ;(ret.style as { inverse: (s: string) => string }).inverse = (s: string) => `[${s}]`
+  return ret
+}
+
 describe("Input — initial state", () => {
   test("defaults to empty value and cursor=0", () => {
     const n = input()
@@ -596,6 +603,55 @@ describe("Input — render", () => {
 
     const rows = await n.render(cursorCtx(20))
     expect(rows).toEqual(["one", "two", "three", "fouR"])
+  })
+
+  describe("cursor next to wide chars, graphemes and tabs", () => {
+    async function renderAt(value: string, cursor = value.length) {
+      const n = input({ cursor, value })
+      n.mount(mockMountCtx("ui"))
+      void n.emit("focus")
+      return n.render(markCtx(40))
+    }
+
+    test("cursor at the end renders past the last wide char", async () => {
+      expect(await renderAt("日本語")).toEqual(["日本語[ ]"])
+      expect(await renderAt("こんにちは世界")).toEqual(["こんにちは世界[ ]"])
+    })
+
+    test("cursor at the end of mixed-width text renders past the last char", async () => {
+      expect(await renderAt("日本語 and English")).toEqual(["日本語 and English[ ]"])
+      expect(await renderAt("abc日本")).toEqual(["abc日本[ ]"])
+    })
+
+    test("cursor on a wide char covers that char without dropping it", async () => {
+      expect(await renderAt("日本語", 0)).toEqual(["[日]本語"])
+      expect(await renderAt("日本語", 1)).toEqual(["日[本]語"])
+      expect(await renderAt("日本語", 2)).toEqual(["日本[語]"])
+    })
+
+    test("cursor on a narrow char after wide chars lands on that char", async () => {
+      expect(await renderAt("日本abc", 3)).toEqual(["日本a[b]c"])
+    })
+
+    test("cursor on a later line counts only that line's wide chars", async () => {
+      expect(await renderAt("日本語\n行一")).toEqual(["日本語", "行一[ ]"])
+      expect(await renderAt("日本語\n行一", 5)).toEqual(["日本語", "行[一]"])
+    })
+
+    test("cursor on a multi-code-point grapheme covers the whole grapheme", async () => {
+      expect(await renderAt("a☀️b", 1)).toEqual(["a[☀️]b"])
+      expect(await renderAt("a🇯🇵b", 1)).toEqual(["a[🇯🇵]b"])
+      expect(await renderAt("a🇯🇵b", 5)).toEqual(["a🇯🇵[b]"])
+    })
+
+    test("cursor after a tab lands on the char past the expanded tab", async () => {
+      expect(await renderAt("a\tb", 2)).toEqual(["a   [b]"])
+      expect(await renderAt("a\tb")).toEqual(["a   b[ ]"])
+    })
+
+    test("cursor on a tab covers the whole expanded tab", async () => {
+      expect(await renderAt("a\tb", 1)).toEqual(["a[   ]b"])
+    })
   })
 
   test("word-wraps a long line across multiple rows", async () => {

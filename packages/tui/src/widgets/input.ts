@@ -16,7 +16,7 @@ import { basename } from "pathe"
 import { Node } from "../core/node.ts"
 import { untrack, unwrap } from "../core/reactive.ts"
 import { clipboard } from "../input/clipboard.ts"
-import { formatText } from "../layout/text.ts"
+import { expandTabs, formatText } from "../layout/text.ts"
 
 export interface InputState extends StyleState {
   /** Current text content. May include `\n` for multi-line input. */
@@ -522,14 +522,24 @@ export class Input extends Node<InputState, InputEvents> {
     // rendering is line-oriented: newlines consume string indices but not
     // cells in any rendered row. Project the cursor to line/column before
     // slicing the formatted line.
+    //
+    // `sliceAnsi` counts terminal cells, so the column is the display width
+    // of the line up to the cursor, not a string index. Tabs are expanded
+    // first because string-width counts a tab as 0 cells but slice-ansi as
+    // 1. The cursor cell spans the whole grapheme under it: given a range
+    // that splits a wide grapheme, slice-ansi drops it (Bun.sliceAnsi keeps it).
     if (focused && this.ctx?.input.terminalFocus) {
-      const { col, line } = posToLineCol(value, cursor)
-      const lines = splitAnsi(content)
+      const { line } = posToLineCol(value, cursor)
+      const lines = splitAnsi(expandTabs(content))
       const target = Math.max(0, Math.min(line, lines.length - 1))
       const row = lines[target] ?? ""
-      const head = sliceAnsi(row, 0, col)
-      const at = sliceAnsi(row, col, col + 1) || " "
-      const tail = sliceAnsi(row, col + 1)
+      const before = value.slice(lineStartPos(value, cursor), cursor)
+      const under = graphemes.segment(value.slice(cursor, lineEndPos(value, cursor))).containing(0)
+      const start = stringWidth(expandTabs(before))
+      const end = Math.max(start + 1, stringWidth(expandTabs(before + (under?.segment ?? ""))))
+      const head = sliceAnsi(row, 0, start)
+      const at = sliceAnsi(row, start, end) || " "
+      const tail = sliceAnsi(row, end)
       lines[target] = head + ctx.style.inverse(at) + tail
       content = lines.join("\n")
     }
@@ -586,6 +596,12 @@ function lineColToPos(value: string, line: number, col: number): number {
     offset += segment.length
   }
   return abs + offset
+}
+
+function lineStartPos(value: string, cursor: number): number {
+  let i = cursor
+  while (i > 0 && value[i - 1] !== "\n") i--
+  return i
 }
 
 function lineEndPos(value: string, cursor: number): number {
