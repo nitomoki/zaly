@@ -40,7 +40,10 @@ export function actionsSource(opts: ActionsSourceOptions): CompletionSource<Acti
 
   return {
     accept(item): undefined {
-      opts.actions.dispatch(item.id, { source: "autocomplete" })
+      // Dispatch after Autocomplete removes the typed `/cmd`: `accept` runs
+      // before that rewrite, and an action that opens a picker right away
+      // stashes the input and restores it on close, `/cmd` included.
+      queueMicrotask(() => opts.actions.dispatch(item.id, { source: "autocomplete" }))
       return undefined
     },
     complete(_query, match): ActionCompletionItem[] {
