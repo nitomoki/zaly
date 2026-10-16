@@ -632,10 +632,10 @@ export class Stream extends Surface<StreamEvents> {
   }
 
   /**
-   * Terminal was resized. The renderer has already wiped the screen and
-   * invalidated every node cache (ctx version bump), so the surface only has
-   * to drop the bookkeeping that is measured against the old geometry and let
-   * the re-render rebuild it at the new width.
+   * Terminal was resized. The renderer has already reissued the scroll region
+   * and invalidated every node cache (ctx version bump), so the surface only
+   * has to drop the bookkeeping that is measured against the old geometry and
+   * let the re-render rebuild it at the new width.
    *
    * History is deliberately *kept*:
    *
