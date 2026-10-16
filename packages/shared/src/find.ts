@@ -160,16 +160,17 @@ async function* spawnFind(cmd: string, args: string[], opts: FindOptions): Async
   let stoppedEarly = false
 
   try {
-    for await (const batch of stdout.lineBatches(1024)) {
+    for await (const lines of stdout.lineBatches(1024)) {
       if (opts.signal?.aborted) {
         stoppedEarly = true
         proc.abort()
         break
       }
 
-      const paths = opts.limit ? batch.slice(0, opts.limit - count) : batch
-      count += paths.length
-      yield paths
+      // `rg --files` has no result cap, so the limit is enforced here.
+      const batch = opts.limit ? lines.slice(0, opts.limit - count) : lines
+      yield batch
+      count += batch.length
 
       if (opts.limit && count >= opts.limit) {
         stoppedEarly = true

@@ -3,6 +3,7 @@ import type { FindToolMeta } from "../src/tools/find.ts"
 
 import { justText } from "@zaly/ai"
 import { find as findFiles } from "@zaly/shared/find"
+import { which } from "@zaly/shared/process"
 import { execFileSync } from "node:child_process"
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -152,3 +153,21 @@ test("allows explicitly targeting an otherwise excluded directory", async () => 
   const files = await find({ paths: ["node_modules"] })
   expect(files).toContain("node_modules/dependency.js")
 })
+
+const backends = {
+  fd: !!(which("fd") ?? which("fdfind")),
+  glob: true,
+  rg: !!which("rg"),
+}
+for (const [backend, available] of Object.entries(backends)) {
+  test.skipIf(!available)(`limit caps the total ${backend} returns across paths`, async () => {
+    mkdirSync(join(dir, "few"))
+    mkdirSync(join(dir, "many"))
+    for (let i = 0; i < 2; i++) writeFileSync(join(dir, "few", `f${i}.ts`), "")
+    for (let i = 0; i < 50; i++) writeFileSync(join(dir, "many", `f${i}.ts`), "")
+    const backendName = backend as keyof typeof backends
+    const opts = { backend: backendName, cwd: dir, limit: 3, paths: ["few", "many"] }
+    const batches = await Array.fromAsync(findFiles(opts))
+    expect(batches.flat()).toHaveLength(3)
+  })
+}
