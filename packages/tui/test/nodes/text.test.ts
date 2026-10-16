@@ -33,6 +33,16 @@ describe("Text", () => {
     expect(await t.render(ctx(6))).toEqual(["hello ", "world"])
   })
 
+  test("wraps wide (CJK) chars that fit the width by count but not by cells", async () => {
+    const t = new Text({ content: "あいうえおかきくけこ" }) // 10 chars, 20 cells
+    expect(await t.render(ctx(12))).toEqual(["あいうえおか", "きくけこ"])
+  })
+
+  test("cuts a wide-char line that overflows only by trailing spaces", async () => {
+    const t = new Text({ content: "あいうえお   " })
+    expect(await t.render(ctx(10))).toEqual(["あいうえお"])
+  })
+
   test("char wrap hard-breaks long words", async () => {
     const t = new Text({ content: "supercalifragilistic", wrap: "char" })
     expect(await t.render(ctx(5))).toEqual(["super", "calif", "ragil", "istic"])

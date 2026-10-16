@@ -48,8 +48,10 @@ export function formatText(
 
       const stripped = stripAnsi(line)
 
-      // Long line that ends in (ansi) whitespace, so just strip
-      if (stripped.slice(opts.width).trim() === "") {
+      // Long line that ends in (ansi) whitespace, so just strip. Sliced by
+      // cells, not `String#slice`: wide chars make a line overflow `width`
+      // with fewer than `width` code units.
+      if (sliceAnsi(stripped, opts.width).trim() === "") {
         ret.push(sliceAnsi(line, 0, opts.width))
         continue
       }
