@@ -127,6 +127,9 @@ export const builtinOverrides: Record<string, Partial<ModelProvider> | undefined
         .map((m) => ({ ...m, costSchedule: DEEPSEEK_COST })),
     quirks: {
       maxTokensField: "max_tokens",
+      // Thinking mode hands reasoning back across turns: a request whose
+      // history omits `reasoning_content` is rejected outright.
+      reasoningEcho: true,
       reasoningField: "reasoning_content",
       thinkingFormat: "deepseek",
     },

@@ -572,6 +572,14 @@ export type Quirks = {
    *  If unset, adapter accepts any of the three. */
   reasoningField?: "reasoning" | "reasoning_content" | "reasoning_details"
 
+  /** Send reasoning back on assistant messages as `reasoning_content`.
+   *  DeepSeek's thinking mode rejects a request whose assistant turn carries
+   *  `tool_calls` without the field — "The `reasoning_content` in the thinking
+   *  mode must be passed back to the API" — while OpenAI drops prior-turn
+   *  reasoning and errors on the field. An empty string is accepted, so turns
+   *  that produced no reasoning still round-trip. */
+  reasoningEcho?: boolean
+
   /** Model accepts `temperature`. Default derived from
    *  `ModelInfo.temperature` (catalog field); set here to override. */
   temperatureSupported?: boolean

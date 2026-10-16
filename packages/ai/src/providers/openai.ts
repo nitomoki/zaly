@@ -170,6 +170,9 @@ type OpenAIMessage =
       // Chat Completions accepts either, and absent keeps us on the
       // no-null side of the lint rule.
       content?: string
+      // Present only for providers that require reasoning to round-trip
+      // (`Quirks.reasoningEcho`); the field name follows `reasoningField`.
+      reasoning_content?: string
       tool_calls?: {
         id: string
         type: "function"
@@ -193,7 +196,7 @@ async function buildRequest(req: ProviderRequest): Promise<OpenAIChatRequest> {
   const messages: OpenAIMessage[] = []
   for (const msg of ctx.messages) {
     // eslint-disable-next-line no-await-in-loop
-    messages.push(...(await toOpenAIMessages(msg)))
+    messages.push(...(await toOpenAIMessages(msg, quirks)))
   }
   // Durable system prompt → first `role: "system"` message. Joined with
   // blank lines so multiple snippets read as separate paragraphs without
@@ -378,7 +381,7 @@ function toOpenAIAudioPart(part: Inlined<AudioPart>): OpenAIContentPart {
   return { input_audio: { data: part.source.data, format }, type: "input_audio" }
 }
 
-async function toOpenAIMessages(msg: Message): Promise<OpenAIMessage[]> {
+async function toOpenAIMessages(msg: Message, quirks: Quirks): Promise<OpenAIMessage[]> {
   // `role: "tool"` is special — Chat Completions requires one wire
   // message per `tool_call_id`, but the kernel's `Message<"tool">` packs
   // all the results from one parallel-tool batch into a single message
@@ -411,10 +414,10 @@ async function toOpenAIMessages(msg: Message): Promise<OpenAIMessage[]> {
     }
     return out
   }
-  return [await toOpenAIMessage(msg)]
+  return [await toOpenAIMessage(msg, quirks)]
 }
 
-async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
+async function toOpenAIMessage(msg: Message, quirks: Quirks): Promise<OpenAIMessage> {
   switch (msg.role) {
     case "system": {
       // OpenAI accepts mid-conversation `role: "system"` natively, so we
@@ -441,16 +444,18 @@ async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
     case "assistant": {
       if (typeof msg.content === "string") return { content: msg.content, role: "assistant" }
       // Flatten the ordered part array: concatenate all text, bucket
-      // all tool-call parts. Reasoning parts are dropped — Chat
-      // Completions has no way to send reasoning back to the model,
-      // and OpenAI's own reasoning models strip them from prior turns
-      // anyway. If we later target the Responses API, reasoning
-      // round-trips there.
+      // all tool-call parts. Reasoning is dropped — unless the provider
+      // wants it back (`reasoningEcho`): DeepSeek's thinking mode
+      // rejects a history whose tool-call turns omit `reasoning_content`,
+      // while OpenAI strips prior-turn reasoning on its own and errors on
+      // the field. The Responses adapter round-trips reasoning regardless.
       const textChunks: string[] = []
+      const reasoningChunks: string[] = []
       const toolCalls: NonNullable<Extract<OpenAIMessage, { role: "assistant" }>["tool_calls"]> = []
       for (const part of msg.content) {
         if (part.type === "text") textChunks.push(part.text)
-        else if (part.type === "tool-call") {
+        else if (part.type === "reasoning") reasoningChunks.push(part.text)
+        else {
           const args = part.params ?? {}
           const argStr = typeof args === "string" ? args : safeStringify(args)
           toolCalls.push({
@@ -463,6 +468,14 @@ async function toOpenAIMessage(msg: Message): Promise<OpenAIMessage> {
       }
       const out: Extract<OpenAIMessage, { role: "assistant" }> = { role: "assistant" }
       if (textChunks.length > 0) out.content = textChunks.join("")
+      // Thinking mode requires `reasoning_content` on every assistant turn that
+      // carries `tool_calls` — verified against the API: the field is rejected
+      // only when missing, and an empty string satisfies it, so a turn that
+      // produced no reasoning text (or came from a non-thinking session) still
+      // round-trips.
+      if (quirks.reasoningEcho && (reasoningChunks.length > 0 || toolCalls.length > 0)) {
+        out.reasoning_content = reasoningChunks.join("")
+      }
       if (toolCalls.length > 0) out.tool_calls = toolCalls
       return out
     }

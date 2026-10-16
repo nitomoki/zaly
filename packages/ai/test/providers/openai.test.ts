@@ -334,6 +334,121 @@ describe("openai: request translation", () => {
     expect(body.messages[1]).toEqual({ content: "answer", role: "assistant" })
   })
 
+  test("`reasoningEcho` sends reasoning back instead of dropping it", async () => {
+    // DeepSeek's thinking mode rejects a history that omits it: "The
+    // reasoning_content in the thinking mode must be passed back to the API".
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [
+                { text: "thinking…", type: "reasoning" },
+                { text: "answer", type: "text" },
+              ],
+              role: "assistant",
+            },
+          ],
+          model: "deepseek-flash",
+          quirks: { reasoningEcho: true, reasoningField: "reasoning_content" },
+        })
+      )
+    )
+
+    const body = recorded[0].body as { messages: unknown[] }
+    expect(body.messages[1]).toEqual({
+      content: "answer",
+      reasoning_content: "thinking…",
+      role: "assistant",
+    })
+  })
+
+  test("`reasoningEcho` also carries a tool-call-only turn", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [
+                { text: "thinking…", type: "reasoning" },
+                { id: "c1", name: "read", params: { path: "a" }, type: "tool-call" },
+              ],
+              role: "assistant",
+            },
+          ],
+          model: "deepseek-flash",
+          quirks: { reasoningEcho: true, reasoningField: "reasoning_content" },
+        })
+      )
+    )
+
+    const body = recorded[0].body as { messages: Record<string, unknown>[] }
+    expect(body.messages[1].reasoning_content).toBe("thinking…")
+    expect(body.messages[1].content).toBeUndefined()
+    expect(body.messages[1].tool_calls).toHaveLength(1)
+  })
+
+  test("`reasoningEcho` sends an empty field when a tool-call turn has no reasoning", async () => {
+    // DeepSeek rejects a tool-call turn whose `reasoning_content` is missing
+    // (400, "The reasoning_content in the thinking mode must be passed back to
+    // the API") but accepts an empty string. Turn the history into one
+    // produced without thinking — a `--reasoning off` turn, or a resumed
+    // session — and the field still has to be present.
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ params: {}, id: "c1", name: "read", type: "tool-call" }],
+              role: "assistant",
+            },
+            {
+              content: [{ content: "ok", id: "c1", name: "read", type: "tool-result" }],
+              role: "tool",
+            },
+          ],
+          model: "deepseek-flash",
+          quirks: { reasoningEcho: true, reasoningField: "reasoning_content" },
+        })
+      )
+    )
+
+    const body = recorded[0].body as { messages: Record<string, unknown>[] }
+    expect(body.messages[1].reasoning_content).toBe("")
+    expect(body.messages[1].tool_calls).toHaveLength(1)
+  })
+
+  test("without `reasoningEcho` the field stays off the wire", async () => {
+    const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
+    const provider = createOpenAI({ apiKey: "test", fetch })
+    await drain(
+      provider.stream(
+        streamReq({
+          messages: [
+            { content: "x", role: "user" },
+            {
+              content: [{ id: "c1", name: "read", params: {}, type: "tool-call" }],
+              role: "assistant",
+            },
+          ],
+          model: "gpt-4o-mini",
+        })
+      )
+    )
+
+    const body = recorded[0].body as { messages: Record<string, unknown>[] }
+    expect(body.messages[1]).not.toHaveProperty("reasoning_content")
+  })
+
   test("tool role → separate message with tool_call_id", async () => {
     const { fetch, recorded } = recordFetch(sseResponse([finishChunk()]))
     const provider = createOpenAI({ apiKey: "test", fetch })

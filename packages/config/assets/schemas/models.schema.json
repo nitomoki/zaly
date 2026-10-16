@@ -119,6 +119,10 @@
           ],
           "description": "Streaming delta field that carries reasoning tokens.\n- `\"reasoning\"` (OpenRouter, most third-parties)\n- `\"reasoning_content\"` (DeepSeek-ish)\n- `\"reasoning_details\"` (structured form on a few providers)\nIf unset, adapter accepts any of the three."
         },
+        "reasoningEcho": {
+          "type": "boolean",
+          "description": "Send reasoning back on assistant messages as `reasoning_content`.\nDeepSeek's thinking mode rejects a request whose assistant turn carries\n`tool_calls` without the field — \"The `reasoning_content` in the thinking\nmode must be passed back to the API\" — while OpenAI drops prior-turn\nreasoning and errors on the field. An empty string is accepted, so turns\nthat produced no reasoning still round-trip."
+        },
         "temperatureSupported": {
           "type": "boolean",
           "description": "Model accepts `temperature`. Default derived from\n`ModelInfo.temperature` (catalog field); set here to override."
