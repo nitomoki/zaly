@@ -307,6 +307,12 @@ export class App {
         { run: false }
       )
       void this.#agent.run()
+    } else if (this.#agent.loop.autoStart) {
+      this.notify(
+        "Loop mode was requested, but this session's loop is already finished. " +
+          "Use `/loop <goal>` or `--goal` to start a new one.",
+        { level: "warn", timeout: 6000, title: "Loop" }
+      )
     }
   }
 
