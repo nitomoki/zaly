@@ -111,6 +111,11 @@ export class LoopController implements LoopToolApi {
     return this.#goal
   }
 
+  /** Supervisor profile: expose the swarm tools for delegated work. */
+  get supervisor(): boolean {
+    return this.#opts.profile === "supervisor"
+  }
+
   get state(): LoopSnapshot {
     const progress: LoopProgressSnapshot = {
       ...this.#progress,

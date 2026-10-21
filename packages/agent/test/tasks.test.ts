@@ -662,3 +662,30 @@ describe("descOfCall (via task desc)", () => {
     expect(tasks.finished()[0].desc).toBe("sync")
   })
 })
+describe("Tasks maxParallel", () => {
+  test("queues parallel calls above the concurrency cap", async () => {
+    let active = 0
+    let peak = 0
+    const slow = defineTool({
+      name: "slow",
+      parallel: true,
+      params: Type.Object({}),
+      async call() {
+        active++
+        peak = Math.max(peak, active)
+        await sleep(15)
+        active--
+        return "ok"
+      },
+    })
+    const tasks = new Tasks()
+    tasks.maxParallel = 2
+    tasks.$tools = [slow]
+    const parts = await tasks.run(
+      [callOf("slow"), callOf("slow"), callOf("slow"), callOf("slow")],
+      {}
+    )
+    expect(parts).toHaveLength(4)
+    expect(peak).toBe(2)
+  })
+})

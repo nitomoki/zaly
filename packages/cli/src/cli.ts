@@ -191,7 +191,7 @@ export function mainCommand(cli: Cli) {
       },
       profile: {
         type: "enum",
-        options: ["interactive", "autonomous", "ci", "watch"],
+        options: ["interactive", "autonomous", "ci", "watch", "supervisor"],
         description: "LoopAgent profile",
       },
       mode: {

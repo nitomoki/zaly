@@ -30,6 +30,7 @@ import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
 import { loopTool } from "./tools/loop.ts"
 import { questionTool } from "./tools/question.ts"
 import { subagentTool } from "./tools/subagent.ts"
+import { agentSendTool, agentSpawnTool } from "./tools/swarm.ts"
 import { wakeupTool } from "./tools/wakeup.ts"
 import { TokenUsage } from "./utils/usage.ts"
 import { uuidv7 } from "./utils/uuid.ts"
@@ -202,7 +203,8 @@ export class Agent extends Emitter<AgentEvents> {
     let tools = [...this.tools].filter((t) => t.name !== "skill")
     if (!overrides.loop) tools = tools.filter((t) => t.name !== "loop")
     if (!overrides.question) tools = tools.filter((t) => t.name !== "question")
-    if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
+    if (childDepth >= this.maxDepth)
+      tools = tools.filter((t) => t.name !== "subagent" && t.name !== "agent_spawn")
     const { createAgent } = await import("./ctx.ts")
 
     const ret = await createAgent({
@@ -324,12 +326,21 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   #syncExtraTools(): void {
+    const loopOpts = this.#opts.loop === false ? undefined : this.#opts.loop
+    const parallel =
+      this.#opts.maxParallel ??
+      (this.#loopController.active ? (loopOpts?.maxParallel ?? 4) : Number.POSITIVE_INFINITY)
+    this.#tasks.maxParallel = Number.isFinite(parallel) ? Math.max(1, parallel) : parallel
     const extra: Tool[] = []
     const has = (name: string) => this.#ctx.tools.some((t) => t.name === name)
     if (this.#loopController.active) {
       if (!has("loop")) extra.push(loopTool)
       if (!has("subagent")) extra.push(subagentTool)
       if (!has("wakeup")) extra.push(wakeupTool)
+      if (this.#loopController.supervisor) {
+        if (!has("agent_spawn")) extra.push(agentSpawnTool)
+        if (!has("agent_send")) extra.push(agentSendTool)
+      }
     }
     if (this.#opts.question && !has("question")) extra.push(questionTool)
     this.#extraTools = extra

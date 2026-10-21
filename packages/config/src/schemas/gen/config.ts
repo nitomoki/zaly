@@ -11,7 +11,7 @@ const validator = (() => {
     const _iv0 = new Set(["andromeeda", "aurora-x", "auto", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]);
     const _ae0 = "(undefined | { mode?: \"fullscreen\" | \"scrollback\" | undefined; copyOnSelect?: boolean | undefined; collapsedTools?: AnyTool[] | undefined; images?: boolean | undefined; listHeight?: number | undefined; ... 5 more ...; treeHeight?: number | undefined; })";
     const _ae1 = "(undefined | { enabled?: boolean | undefined; keepTokens?: number | undefined; reasoning?: ReasoningEffort | undefined; summaryTokens?: number | undefined; threshold?: number | undefined; })";
-    const _ae2 = "(undefined | { enabled?: boolean | undefined; profile?: LoopProfile | undefined; goal?: string | undefined; maxTurns?: number | undefined; maxWallTimeMs?: number | undefined; maxCostUsd?: number | undefined; maxNoProgressTurns?: number | undefined; onNoProgress?: LoopNoProgressAction | undefined; heartbeatMs?: number | undefined...)";
+    const _ae2 = "(undefined | { enabled?: boolean | undefined; profile?: LoopProfile | undefined; goal?: string | undefined; maxTurns?: number | undefined; maxWallTimeMs?: number | undefined; maxCostUsd?: number | undefined; ... 4 more ...; verify?: { ...; } | undefined; })";
     const _ae3 = "(undefined | { enabled?: boolean | undefined; minTokens?: number | undefined; keepTurns?: number | undefined; delta?: number | undefined; target?: number | undefined; })";
     const _ae4 = "(undefined | { preset?: PermissionPresetName | undefined; allow?: string[] | undefined; deny?: string[] | undefined; ask?: string[] | undefined; })";
     const _av0 = new Set(["andromeeda", "aurora-x", "auto", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]);
@@ -498,10 +498,10 @@ const validator = (() => {
         path: _path + ".enabled",
         expected: "(boolean | undefined)",
         value: input.enabled
-    }, _errorFactory)) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "watch" === input.profile || _assertGuard_1._assertGuard(_exceptionable, {
+    }, _errorFactory)) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "supervisor" === input.profile || "watch" === input.profile || _assertGuard_1._assertGuard(_exceptionable, {
         method: "typia.createAssertEquals",
         path: _path + ".profile",
-        expected: "(\"autonomous\" | \"ci\" | \"interactive\" | \"watch\" | undefined)",
+        expected: "(\"autonomous\" | \"ci\" | \"interactive\" | \"supervisor\" | \"watch\" | undefined)",
         value: input.profile
     }, _errorFactory)) && (undefined === input.goal || "string" === typeof input.goal || _assertGuard_1._assertGuard(_exceptionable, {
         method: "typia.createAssertEquals",
@@ -528,6 +528,11 @@ const validator = (() => {
         path: _path + ".maxNoProgressTurns",
         expected: "(number | undefined)",
         value: input.maxNoProgressTurns
+    }, _errorFactory)) && (undefined === input.maxParallel || "number" === typeof input.maxParallel || _assertGuard_1._assertGuard(_exceptionable, {
+        method: "typia.createAssertEquals",
+        path: _path + ".maxParallel",
+        expected: "(number | undefined)",
+        value: input.maxParallel
     }, _errorFactory)) && (undefined === input.onNoProgress || "ask" === input.onNoProgress || "reflect" === input.onNoProgress || "stop" === input.onNoProgress || _assertGuard_1._assertGuard(_exceptionable, {
         method: "typia.createAssertEquals",
         path: _path + ".onNoProgress",
@@ -549,7 +554,7 @@ const validator = (() => {
         expected: "(undefined | { command: string[]; cwd?: string | undefined; timeoutMs?: number | undefined; })",
         value: input.verify
     }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "onNoProgress", "heartbeatMs", "verify"].some((prop: any) => key === prop))
+        if (["enabled", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "maxParallel", "onNoProgress", "heartbeatMs", "verify"].some((prop: any) => key === prop))
             return true;
         const value = input[key];
         if (undefined === value)
@@ -778,8 +783,8 @@ const validator = (() => {
             return true;
         return false;
     }));
-    const _io5 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "watch" === input.profile) && (undefined === input.goal || "string" === typeof input.goal) && (undefined === input.maxTurns || "number" === typeof input.maxTurns) && (undefined === input.maxWallTimeMs || "number" === typeof input.maxWallTimeMs) && (undefined === input.maxCostUsd || "number" === typeof input.maxCostUsd) && (undefined === input.maxNoProgressTurns || "number" === typeof input.maxNoProgressTurns) && (undefined === input.onNoProgress || "ask" === input.onNoProgress || "reflect" === input.onNoProgress || "stop" === input.onNoProgress) && (undefined === input.heartbeatMs || "number" === typeof input.heartbeatMs) && (undefined === input.verify || "object" === typeof input.verify && null !== input.verify && _io6(input.verify, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "onNoProgress", "heartbeatMs", "verify"].some((prop: any) => key === prop))
+    const _io5 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "supervisor" === input.profile || "watch" === input.profile) && (undefined === input.goal || "string" === typeof input.goal) && (undefined === input.maxTurns || "number" === typeof input.maxTurns) && (undefined === input.maxWallTimeMs || "number" === typeof input.maxWallTimeMs) && (undefined === input.maxCostUsd || "number" === typeof input.maxCostUsd) && (undefined === input.maxNoProgressTurns || "number" === typeof input.maxNoProgressTurns) && (undefined === input.maxParallel || "number" === typeof input.maxParallel) && (undefined === input.onNoProgress || "ask" === input.onNoProgress || "reflect" === input.onNoProgress || "stop" === input.onNoProgress) && (undefined === input.heartbeatMs || "number" === typeof input.heartbeatMs) && (undefined === input.verify || "object" === typeof input.verify && null !== input.verify && _io6(input.verify, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
+        if (["enabled", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "maxParallel", "onNoProgress", "heartbeatMs", "verify"].some((prop: any) => key === prop))
             return true;
         const value = input[key];
         if (undefined === value)

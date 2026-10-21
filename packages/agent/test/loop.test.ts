@@ -206,6 +206,17 @@ describe("LoopAgent", () => {
     expect(users).toContain("change direction")
   })
 
+  test("supervisor profile exposes swarm tools and caps parallelism", async () => {
+    const agent = await loadAgent({
+      loop: { enabled: true, profile: "supervisor" },
+      model: mockModel([[finish]]),
+    })
+    const names = agent.tools.map((t) => t.name)
+    expect(names).toContain("agent_spawn")
+    expect(names).toContain("agent_send")
+    expect(agent.tasks.maxParallel).toBe(4)
+  })
+
   test("repairs an interrupted tool call on resume", async () => {
     const session = await Session.load()
     await session.start()

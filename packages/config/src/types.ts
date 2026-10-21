@@ -82,6 +82,7 @@ export type ResolvedConfig = {
     maxWallTimeMs?: number
     maxCostUsd?: number
     maxNoProgressTurns?: number
+    maxParallel?: number
     onNoProgress?: LoopNoProgressAction
     heartbeatMs?: number
     verify?: { command: string[]; cwd?: string; timeoutMs?: number }

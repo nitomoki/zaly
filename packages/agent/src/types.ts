@@ -259,6 +259,8 @@ export interface AgentOptions extends CollectOptions {
   compaction?: MaybeGetter<Partial<CompactionOptions>>
   /** LoopAgent settings. Omit for a normal interactive agent. */
   loop?: LoopOptions | false
+  /** Global cap on concurrently running tools. Loop mode defaults to 4. */
+  maxParallel?: number
   /** Resolver for structured questions from the model. The loop tool's
    *  `blocked` action and dedicated `question` tool use it. Without a
    *  callback, those tools report that no interactive user is available. */

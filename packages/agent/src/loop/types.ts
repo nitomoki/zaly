@@ -23,7 +23,7 @@ export type LoopPhase =
   | "blocked"
   | "stopped"
 
-export type LoopProfile = "interactive" | "autonomous" | "ci" | "watch"
+export type LoopProfile = "interactive" | "autonomous" | "ci" | "watch" | "supervisor"
 
 export type LoopNoProgressAction = "reflect" | "ask" | "stop"
 
@@ -116,6 +116,7 @@ export interface LoopOptions {
   maxWallTimeMs?: number
   maxCostUsd?: number
   maxNoProgressTurns?: number
+  maxParallel?: number
   onNoProgress?: LoopNoProgressAction
   profile?: LoopProfile
   heartbeatMs?: number

@@ -89,6 +89,8 @@ interface InternalTask {
   type: string
   desc: string
   status: TaskStatus
+  /** True when this task currently holds a concurrency slot. */
+  active?: boolean
   /** Wallclock at registration. */
   startedAt: number
   /** Wallclock at completion; set once status is `done`. */
@@ -135,6 +137,11 @@ interface InternalTask {
 export class Tasks extends Emitter<TasksEvents> {
   readonly #map = new Map<string, InternalTask>()
   graceMs = DEFAULT_GRACE_MS
+  /** Global cap on concurrently running tools. `Infinity` preserves the
+   *  historical behavior. */
+  maxParallel = Infinity
+  #active = 0
+  #parallelQueue: string[] = []
 
   #tools: (() => Promise<readonly Tool[]>) | Tool[] = []
 
@@ -238,6 +245,11 @@ export class Tasks extends Emitter<TasksEvents> {
   remove(id: string): boolean {
     const task = this.#map.get(id)
     if (!task) return false
+    if (task.active) {
+      task.active = false
+      this.#active = Math.max(0, this.#active - 1)
+      this.#drainParallel()
+    }
     this.#map.delete(id)
     void this.emit("task-removed", { task: toTaskInfo(task) })
     return true
@@ -250,6 +262,7 @@ export class Tasks extends Emitter<TasksEvents> {
   done(id: string, result: ToolResult): void {
     const task = this.#map.get(id)
     if (!task || task.status === "done") return
+    const wasActive = task.active === true
     task.status = "done"
     task.result = result
     task.finishedAt = Date.now()
@@ -257,8 +270,24 @@ export class Tasks extends Emitter<TasksEvents> {
     if (!task.ownerRound) {
       void this.emit("task-done", { task: toTaskInfo(task) as DoneTaskInfo })
     }
+    if (wasActive) {
+      task.active = false
+      this.#active = Math.max(0, this.#active - 1)
+      this.#drainParallel()
+    }
     this.#startReadyDependents(id, result)
     this.#syncHeartbeat()
+  }
+
+  /** Start queued tasks until the concurrency budget is full. */
+  #drainParallel(): void {
+    while (this.#active < this.maxParallel) {
+      const id = this.#parallelQueue.shift()
+      if (!id) break
+      const task = this.#map.get(id)
+      if (task?.status !== "pending" || task.waitingFor !== "parallel") continue
+      void this.#startPending(task)
+    }
   }
 
   /** Abort a running task. Calls the streamable's `abort()` if present;
@@ -281,6 +310,7 @@ export class Tasks extends Emitter<TasksEvents> {
    *  task's `donePromise` so the registry is fully drained before
    *  resolving — so callers can rely on no pending I/O after `dispose`. */
   async killAll(): Promise<void> {
+    this.#parallelQueue.length = 0
     const active = [...this.#map.values()].filter((t) => t.status !== "done")
     for (const t of active) {
       if (t.streamable) t.streamable.abort()
@@ -536,6 +566,15 @@ export class Tasks extends Emitter<TasksEvents> {
    *  or transitions to `done` (sync result or error). */
   #dispatch(task: InternalTask, tool: Tool, call: ToolCallPart, ctxBase: ToolContext): void {
     const ctx: ToolContext = { ...ctxBase, tasks: this }
+    if (this.#active >= this.maxParallel) {
+      task.status = "pending"
+      task.waitingFor = "parallel"
+      task.pending = { call, ctx: ctxBase, tool }
+      this.#parallelQueue.push(task.id)
+      return
+    }
+    this.#active++
+    task.active = true
     task.status = "running"
 
     const dispatchPromise = runTool(tool, call.params, ctx, { preflight: false, streaming: true })

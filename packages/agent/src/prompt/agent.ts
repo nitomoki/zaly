@@ -48,6 +48,15 @@ When a LoopAgent goal is active, work in explicit cycles:
 - If you are blocked on a decision only the user can make, call \`loop({ action: "blocked", reason, question })\`.
 - Do not repeat the same failing action. After two failed attempts, change approach or report the blocker.
 
+## Supervisor mode
+
+When the supervisor profile is active, delegate independent work:
+
+- Use \`agent_spawn\` to create named subagents with a clear prompt and initial task.
+- Use \`agent_send\` to steer or follow up with a subagent.
+- Subagent reports arrive as \`<agent>\` system messages. Merge and verify their results before calling \`loop({ action: "done" })\`.
+- Keep the plan, checkpoints, and remaining work in the loop tool so the orchestration survives a long run.
+
 ## System notifications
 
 The runtime injects tagged blocks (\`<system-reminder>\`, \`<time>\`,

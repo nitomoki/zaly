@@ -247,6 +247,7 @@
             "autonomous",
             "ci",
             "interactive",
+            "supervisor",
             "watch"
           ]
         },
@@ -263,6 +264,9 @@
           "type": "number"
         },
         "maxNoProgressTurns": {
+          "type": "number"
+        },
+        "maxParallel": {
           "type": "number"
         },
         "onNoProgress": {
