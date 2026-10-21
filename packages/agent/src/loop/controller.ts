@@ -78,27 +78,12 @@ export class LoopController implements LoopToolApi {
     this.#opts = { ...DEFAULTS, ...opts } as ResolvedOptions
     this.#onChange = onChange
 
-    const saved = agent.session.loop
-    this.#goal = opts?.goal ?? saved?.goal
-    this.#todos = saved?.todos
-    this.#phase = saved?.phase ?? (this.#goal ? "plan" : "idle")
-    this.#status = saved?.status ?? "idle"
-    this.#startedAt = saved?.startedAt ?? Date.now()
-    this.#turns = saved?.budget.turns ?? 0
-    this.#steps = saved?.budget.steps ?? 0
-    this.#toolCalls = saved?.budget.toolCalls ?? 0
-    this.#iteration = saved?.iteration ?? 0
-    if (saved?.progress) {
-      this.#progress = {
-        ...saved.progress,
-        filesChanged: [...saved.progress.filesChanged],
-        filesRead: [...saved.progress.filesRead],
-      }
-    }
-    this.#finished = saved?.status === "done" || saved?.status === "stopped"
-    if (saved?.status === "running") {
-      this.#status = "idle"
-      this.#reason = "previous loop was interrupted"
+    this.#hydrate(agent.session.loop)
+    if (opts?.goal !== undefined) {
+      this.#goal = opts.goal
+      this.#completedGoal = undefined
+      this.#finished = false
+      this.#resetGoalState()
     }
   }
 
@@ -150,12 +135,13 @@ export class LoopController implements LoopToolApi {
     if (!this.active) return []
     if (this.#goal === undefined) {
       return [
-        '## LoopAgent\nLoop mode is active. Inspect the current state and decide the next action. Call `loop({ action: "done", summary, evidence })` when the work is complete.',
+        `## LoopAgent\nProfile: ${this.#opts.profile}\nLoop mode is active. Inspect the current state and decide the next action. Call \`loop({ action: "done", summary, evidence })\` when the work is complete.`,
       ]
     }
     return [
       [
         "## LoopAgent",
+        `Profile: ${this.#opts.profile}`,
         `Goal: ${this.#goal}`,
         "",
         'Work in explicit cycles. Publish a plan with `loop({ action: "plan", steps })`,',
@@ -185,7 +171,7 @@ export class LoopController implements LoopToolApi {
       limits: {
         costUsd: this.#opts.maxCostUsd,
         steps: this.#opts.maxSteps,
-        turns: this.#opts.maxTurns,
+        turns: this.#turnLimit(),
         wallTimeMs: this.#opts.maxWallTimeMs,
       },
       phase: this.#phase,
@@ -199,7 +185,7 @@ export class LoopController implements LoopToolApi {
   }
 
   setGoal(goal: string | undefined): void {
-    if (goal === this.#goal && this.#status !== "done") return
+    if (goal === this.#goal && !this.#finished) return
     if (goal === undefined) {
       this.#completedGoal ??= this.#goal
       this.#goal = undefined
@@ -214,9 +200,54 @@ export class LoopController implements LoopToolApi {
     this.#goal = goal
     this.#completedGoal = undefined
     this.#finished = false
-    this.#status = "idle"
-    this.#phase = "plan"
-    this.#reason = undefined
+    this.#resetGoalState()
+    this.#persist()
+    this.#emit()
+  }
+
+  reset(): void {
+    this.#cancelWatch()
+    this.#hydrate(this.#agent.session.loop)
+  }
+
+  #hydrate(saved?: LoopSnapshot): void {
+    this.#goal = saved?.goal
+    this.#completedGoal =
+      saved?.status === "done" || saved?.status === "stopped" ? saved.goal : undefined
+    this.#finished = saved?.status === "done" || saved?.status === "stopped"
+    this.#phase = saved?.phase ?? (this.#goal ? "plan" : "idle")
+    this.#status = saved?.status ?? "idle"
+    this.#startedAt = saved?.startedAt ?? Date.now()
+    this.#turns = saved?.budget.turns ?? 0
+    this.#steps = saved?.budget.steps ?? 0
+    this.#toolCalls = saved?.budget.toolCalls ?? 0
+    this.#tokens = saved?.budget.tokens ?? 0
+    this.#costUsd = saved?.budget.costUsd ?? 0
+    this.#iteration = saved?.iteration ?? 0
+    this.#progress = saved?.progress
+      ? {
+          ...saved.progress,
+          filesChanged: [...saved.progress.filesChanged],
+          filesRead: [...saved.progress.filesRead],
+        }
+      : emptyProgress()
+    this.#todos = saved?.todos
+    this.#checkpoint = saved?.progress ? saved.progress.checkpoint : undefined
+    this.#blocked = saved?.blocked
+    this.#completion = saved?.completion
+    this.#reason = saved?.reason
+    this.#noProgressTurns = 0
+    this.#lastFingerprint = undefined
+    this.#reflections = 0
+    this.#retries = 0
+    if (saved?.status === "running") {
+      this.#status = "idle"
+      this.#reason = "previous loop was interrupted"
+    }
+  }
+
+  #resetGoalState(): void {
+    this.#cancelWatch()
     this.#turns = 0
     this.#steps = 0
     this.#toolCalls = 0
@@ -233,35 +264,8 @@ export class LoopController implements LoopToolApi {
     this.#lastFingerprint = undefined
     this.#reflections = 0
     this.#retries = 0
-    this.#persist()
-    this.#emit()
-  }
-
-  reset(): void {
-    this.#cancelWatch()
-    if (this.#status === "done" && this.#goal !== undefined) {
-      this.#completedGoal = this.#goal
-      this.#goal = undefined
-    }
-    this.#finished = false
-    this.#turns = 0
-    this.#steps = 0
-    this.#toolCalls = 0
-    this.#tokens = 0
-    this.#costUsd = 0
-    this.#iteration = 0
-    this.#startedAt = Date.now()
-    this.#progress = emptyProgress()
-    this.#checkpoint = undefined
-    this.#blocked = undefined
-    this.#completion = undefined
-    this.#noProgressTurns = 0
-    this.#lastFingerprint = undefined
-    this.#reflections = 0
-    this.#retries = 0
     this.#status = "idle"
-    this.#completedGoal = undefined
-    this.#phase = this.#goal ? "plan" : "idle"
+    this.#phase = "plan"
     this.#reason = undefined
   }
 
@@ -552,6 +556,7 @@ export class LoopController implements LoopToolApi {
   }
 
   async #checkNoProgress(agent: Agent): Promise<LoopDecision | undefined> {
+    if (this.#opts.profile === "watch") return undefined
     const fingerprint = this.#fingerprint()
     if (fingerprint === this.#lastFingerprint) this.#noProgressTurns++
     else {
@@ -603,8 +608,8 @@ export class LoopController implements LoopToolApi {
   #budgetDecision(): LoopDecision | undefined {
     const budget = this.#budget()
     const limits = this.#opts
-    if (budget.turns >= limits.maxTurns) {
-      return this.#finish("budget-exhausted", `maxTurns (${limits.maxTurns}) reached`)
+    if (budget.turns >= this.#turnLimit()) {
+      return this.#finish("budget-exhausted", `maxTurns (${this.#turnLimit()}) reached`)
     }
     if (limits.maxSteps !== undefined && budget.steps >= limits.maxSteps) {
       return this.#finish("budget-exhausted", `maxSteps (${limits.maxSteps}) reached`)
@@ -639,6 +644,11 @@ export class LoopController implements LoopToolApi {
     this.#persist()
     this.#emit()
     return { action: "stop", kind, reason }
+  }
+
+  #turnLimit(): number {
+    if (this.#opts.profile === "watch") return this.#opts.watch?.maxAttempts ?? 60
+    return this.#opts.maxTurns
   }
 
   #budget(): LoopBudgetSnapshot {

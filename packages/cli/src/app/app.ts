@@ -295,7 +295,19 @@ export class App {
 
     const { attachStream } = await import("./stream.ts")
     attachStream(this)
-    if (this.#agent.loop.autoStart) void this.#agent.run()
+    if (this.#agent.loop.autoStart) {
+      this.#agent.send(
+        {
+          content:
+            this.#agent.loop.goal ??
+            "Begin the LoopAgent run. Inspect the current state and decide the next action.",
+          hidden: true,
+          role: "user",
+        },
+        { run: false }
+      )
+      void this.#agent.run()
+    }
   }
 
   async reload(): Promise<void> {

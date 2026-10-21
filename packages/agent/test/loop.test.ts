@@ -234,6 +234,7 @@ describe("LoopAgent", () => {
         maxNoProgressTurns: 100,
         maxTurns: 2,
         profile: "watch",
+        watch: { everyMs: 1e9, maxAttempts: 2 },
       },
       model,
     })
@@ -282,6 +283,68 @@ describe("LoopAgent", () => {
     agent.send({ content: "quick question", role: "user" })
     expect(await agent.run()).toBe("natural")
     expect(agent.loop.active).toBe(false)
+  })
+
+  test("watch keeps running through idle ticks", async () => {
+    const model = mockModel(
+      Array.from({ length: 12 }, () => [{ delta: "idle", type: "text-delta" }, finish])
+    )
+    const agent = await loadAgent({
+      loop: {
+        enabled: true,
+        maxTurns: 100,
+        profile: "watch",
+        watch: { everyMs: 1e9 },
+      },
+      model,
+    })
+    const stops: string[] = []
+    for (let tick = 0; tick < 8; tick++) {
+      agent.send({ content: `tick ${tick}`, role: "user" })
+      stops.push(await agent.run())
+    }
+    expect(stops.every((s) => s === "natural")).toBe(true)
+    expect(agent.loop.active).toBe(true)
+    await agent.dispose()
+  })
+
+  test("restarts the same goal after budget exhaustion", async () => {
+    const agent = await loadAgent({
+      loop: { doneWhen: () => false, goal: "g", maxTurns: 1 },
+      messages: [{ content: "go", role: "user" }],
+      model: mockModel([[{ delta: "x", type: "text-delta" }, finish]]),
+    })
+    expect(await agent.run()).toBe("budget-exhausted")
+    agent.setGoal("g")
+    expect(agent.loop.active).toBe(true)
+    expect(agent.loop.state.budget.turns).toBe(0)
+  })
+
+  test("resumes a finished session with a new goal", async () => {
+    const session = await Session.load()
+    await session.start()
+    await session.add({ content: "go", role: "user" })
+    const first = await loadAgent({
+      loop: { doneWhen: () => true, goal: "old" },
+      model: mockModel([[{ delta: "done", type: "text-delta" }, finish]]),
+      session,
+    })
+    expect(await first.run()).toBe("goal-met")
+    const second = await loadAgent({
+      loop: { goal: "new goal" },
+      model: mockModel([[{ delta: "hi", type: "text-delta" }, finish]]),
+      session,
+    })
+    expect(second.loop.active).toBe(true)
+    expect(second.loop.goal).toBe("new goal")
+  })
+
+  test("tells the model which loop profile is active", async () => {
+    const agent = await loadAgent({
+      loop: { enabled: true, profile: "watch" },
+      model: mockModel([[finish]]),
+    })
+    expect(agent.loop.prompt().join("\n")).toContain("Profile: watch")
   })
 
   test("ci profile is non-interactive and caps parallelism lower", async () => {
