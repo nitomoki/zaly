@@ -67,6 +67,7 @@ export class LoopController implements LoopToolApi {
   #persistPromise: Promise<void> = Promise.resolve()
   #reflections = 0
   #retries = 0
+  #maxTurnsExplicit = false
   #watchId?: string
 
   constructor(
@@ -78,8 +79,12 @@ export class LoopController implements LoopToolApi {
     this.#opts = { ...DEFAULTS, ...opts } as ResolvedOptions
     this.#onChange = onChange
 
-    this.#hydrate(agent.session.loop)
-    if (opts?.goal !== undefined) {
+    const saved = agent.session.loop
+    this.#maxTurnsExplicit = opts?.maxTurns !== undefined
+    this.#hydrate(saved)
+    const sameGoal = saved !== undefined && opts?.goal === saved.goal
+    const terminal = saved !== undefined && (saved.status === "done" || saved.status === "stopped")
+    if (opts?.goal !== undefined && (!sameGoal || terminal)) {
       this.#goal = opts.goal
       this.#completedGoal = undefined
       this.#finished = false
@@ -461,7 +466,17 @@ export class LoopController implements LoopToolApi {
 
   /** Record a final stop and persist the snapshot. */
   stop(kind: string, reason?: string): void {
+    // A terminal loop is already persisted. In particular, reset() hydrates
+    // the target session and then calls stop("natural"); allowing that through
+    // would rewrite a done snapshot as idle and revive the goal on next start.
+    if (this.#finished) return
     if (!this.active && this.#status !== "done" && this.#status !== "blocked") return
+    // reset() calls stop("natural") after hydrating the target session.
+    // Only watch needs that transition (idle between ticks); for other
+    // profiles it would overwrite a resumed blocked/running snapshot.
+    if (kind === "natural" && (this.#opts.profile !== "watch" || this.#status === "blocked")) {
+      return
+    }
     this.#reason = reason
     if (
       kind === "goal-met" ||
@@ -647,8 +662,9 @@ export class LoopController implements LoopToolApi {
   }
 
   #turnLimit(): number {
-    if (this.#opts.profile === "watch") return this.#opts.watch?.maxAttempts ?? 60
-    return this.#opts.maxTurns
+    if (this.#opts.profile !== "watch") return this.#opts.maxTurns
+    const attempts = Math.max(1, this.#opts.watch?.maxAttempts ?? 60)
+    return this.#maxTurnsExplicit ? Math.min(this.#opts.maxTurns, attempts) : attempts
   }
 
   #budget(): LoopBudgetSnapshot {

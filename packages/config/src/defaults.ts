@@ -32,7 +32,6 @@ export const defaultSettings = {
     heartbeatMs: 30_000,
     maxNoProgressTurns: 3,
     maxParallel: 4,
-    maxTurns: 20,
     onNoProgress: "reflect",
     profile: "interactive",
   },

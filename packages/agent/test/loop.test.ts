@@ -339,6 +339,53 @@ describe("LoopAgent", () => {
     expect(second.loop.goal).toBe("new goal")
   })
 
+  test("keeps a done session done when switching to it", async () => {
+    const session = await Session.load()
+    await session.start()
+    await session.add({ content: "go", role: "user" })
+    const first = await loadAgent({
+      loop: { doneWhen: () => true, goal: "old" },
+      model: mockModel([[{ delta: "done", type: "text-delta" }, finish]]),
+      session,
+    })
+    expect(await first.run()).toBe("goal-met")
+    expect(session.loop?.status).toBe("done")
+
+    const other = await loadAgent({
+      loop: { goal: "other" },
+      model: mockModel([]),
+    })
+    await other.ctx.useSession(session)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(other.loop.goal).toBe("old")
+    expect(other.loop.state.status).toBe("done")
+    expect(other.loop.active).toBe(false)
+    expect(session.loop?.status).toBe("done")
+  })
+
+  test("preserves progress when reopening the same non-terminal goal", async () => {
+    const session = await Session.load()
+    await session.start()
+    await session.addLoop({
+      budget: { costUsd: 0, elapsedMs: 1000, steps: 4, tokens: 100, toolCalls: 5, turns: 3 },
+      goal: "g",
+      iteration: 3,
+      limits: { turns: 20 },
+      phase: "act",
+      profile: "interactive",
+      progress: { commands: 0, errors: 0, filesChanged: [], filesRead: [], toolCalls: 5 },
+      startedAt: Date.now() - 1000,
+      status: "running",
+      todos: [{ status: "in_progress", text: "keep me" }],
+    })
+
+    const agent = await loadAgent({ loop: { goal: "g" }, model: mockModel([]), session })
+    expect(agent.loop.state.budget.turns).toBe(3)
+    expect(agent.loop.state.todos?.[0]?.text).toBe("keep me")
+    expect(agent.loop.active).toBe(true)
+  })
+
   test("tells the model which loop profile is active", async () => {
     const agent = await loadAgent({
       loop: { enabled: true, profile: "watch" },

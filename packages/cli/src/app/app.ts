@@ -295,7 +295,7 @@ export class App {
 
     const { attachStream } = await import("./stream.ts")
     attachStream(this)
-    if (this.#agent.loop.autoStart) {
+    if (this.#agent.loop.autoStart && this.#agent.loop.active) {
       this.#agent.send(
         {
           content:
