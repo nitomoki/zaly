@@ -1,4 +1,10 @@
-import type { AgentStatus, PermissionPresetName, TokenUsage } from "@zaly/agent"
+import type {
+  AgentStatus,
+  LoopProfile,
+  LoopSnapshot,
+  PermissionPresetName,
+  TokenUsage,
+} from "@zaly/agent"
 import type { Model, ReasoningEffort } from "@zaly/ai"
 import type { CamelCase } from "scule"
 
@@ -34,6 +40,9 @@ export interface Flags {
   theme?: string
   yolo?: boolean
   session?: string
+  loop?: boolean
+  goal?: string
+  profile?: LoopProfile
   skills?: boolean
   themes?: boolean
   commands?: boolean
@@ -55,6 +64,8 @@ export type AppState = {
   usage?: TokenUsage
   /** The current reasoning effort. */
   reasoning?: ReasoningEffort
+  /** Current LoopAgent snapshot, when loop mode is active. */
+  loop?: LoopSnapshot
   /** The current scroll position of the render stream */
   scroll: { offset: number; total: number; below: number }
 }

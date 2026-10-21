@@ -26,6 +26,14 @@ export const defaultSettings = {
     summaryTokens: 10_000,
     threshold: 0.95,
   },
+  loop: {
+    enabled: false,
+    heartbeatMs: 30_000,
+    maxNoProgressTurns: 3,
+    maxTurns: 20,
+    onNoProgress: "reflect",
+    profile: "interactive",
+  },
   masking: {
     delta: 0.25,
     enabled: true,

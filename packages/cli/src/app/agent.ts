@@ -22,6 +22,15 @@ export async function loadAgent(app: App): Promise<Agent> {
   const perm = settings.permissions
 
   const cwd = ctx.flags.cwd ?? ss.cwd ?? ctx.config.paths.cwd
+  const loop = {
+    ...settings.loop,
+    ...(ctx.flags.loop ? { enabled: true } : {}),
+    ...(ctx.flags.goal ? { enabled: true, goal: ctx.flags.goal } : {}),
+    ...(ctx.flags.profile ? { profile: ctx.flags.profile } : {}),
+  }
+
+  const loopActive =
+    loop.enabled || Boolean(loop.goal) || Boolean(loop.verify) || loop.profile !== "interactive"
 
   const agent = await createAgent({
     allow: async (req) => {
@@ -31,12 +40,14 @@ export async function loadAgent(app: App): Promise<Agent> {
     bash: settings.system.bash,
     compaction: () => app.$.compaction,
     cwd,
+    heartbeatMs: loopActive ? loop.heartbeatMs : undefined,
     loadModel: async (id) => {
       // Load the model using the proper model registry and auth manager
       const models = await ctx.models()
       return await models.load(id)
     },
     logger: ctx.logger.child("agent"),
+    loop,
     mask: () => app.$.masking,
     permissions: ctx.flags.yolo
       ? { preset: "yolo" }
@@ -44,6 +55,10 @@ export async function loadAgent(app: App): Promise<Agent> {
           preset: ctx.flags.permission ?? perm.preset,
           rules: { allow: perm.allow, ask: perm.ask, deny: perm.deny },
         },
+    question: async (req) => {
+      const { askQuestion } = await import("./question.ts")
+      return await askQuestion(req, app)
+    },
     session,
   })
 
@@ -52,8 +67,13 @@ export async function loadAgent(app: App): Promise<Agent> {
   app.state.reasoning = agent.ctx.reasoning
 
   const tools = await app.ctx.tools()
-  tools.onAny(async () => (agent.ctx.tools = await tools.load()))
+  tools.onAny(async () => {
+    agent.ctx.tools = await tools.load()
+    agent.syncTools()
+  })
   tools.active = ctx.config.$.tools
+  agent.ctx.tools = await tools.load()
+  agent.syncTools()
 
   const prompts = await ctx.prompts()
   const updatePrompt = async () => {
@@ -115,6 +135,8 @@ export function attachState(agent: Agent, state: AppState): void {
       const err = agent.lastStop?.error
       if (err) console.error(`${err.name}: ${err.message}`)
     })
+    .on("loop", ({ state: loop }) => (state.loop = loop))
   agent.ctx.on("session", () => (state.usage = agent.usage))
   state.usage = agent.usage
+  state.loop = agent.loop.state
 }

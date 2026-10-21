@@ -1,4 +1,4 @@
-import type { AnyTool, PermissionPresetName } from "@zaly/agent"
+import type { AnyTool, LoopNoProgressAction, LoopProfile, PermissionPresetName } from "@zaly/agent"
 import type { ReasoningEffort } from "@zaly/ai"
 import type { DeepPartial, Simplify } from "@zaly/shared"
 import type { KeyPatterns, ShikiSelection } from "@zaly/tui"
@@ -72,6 +72,19 @@ export type ResolvedConfig = {
     summaryTokens: number
     /** Threshold for automatic compaction. */
     threshold: number
+  }
+  loop: {
+    /** Enable LoopAgent behaviour even without a goal. */
+    enabled: boolean
+    profile: LoopProfile
+    goal?: string
+    maxTurns?: number
+    maxWallTimeMs?: number
+    maxCostUsd?: number
+    maxNoProgressTurns?: number
+    onNoProgress?: LoopNoProgressAction
+    heartbeatMs?: number
+    verify?: { command: string[]; cwd?: string; timeoutMs?: number }
   }
   masking: {
     /** Whether to enable masking. Defaults to true. */

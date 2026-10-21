@@ -1,4 +1,5 @@
 import type { Message, ReasoningEffort } from "@zaly/ai"
+import type { LoopSnapshot } from "../loop/types.ts"
 import type { SessionStore } from "./store.ts"
 
 // ── Records ──────────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ type SessionN = {
   | { type: "session-resume" }
   | { type: "session-settings"; settings: SessionSettings }
   | { type: "message"; message: Message }
+  | { type: "loop"; state: LoopSnapshot }
   | { type: "mask-checkpoint"; threshold: number; messageId: string }
   | {
       type: "compact"
@@ -59,6 +61,7 @@ export type SessionView = {
   messages: Message[]
   nodes: Map<string, SessionNodeView>
   compact?: SessionNode<"compact">
+  loop?: SessionNode<"loop">
   maskCheckpoint?: MaskCheckpoint
 }
 

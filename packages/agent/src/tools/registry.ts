@@ -28,6 +28,8 @@ const builtin = {
   fetch: () => import("./fetch.ts" as string).then((m) => m.fetchTool as Tool),
   find: () => import("./find.ts" as string).then((m) => m.findTool as Tool),
   grep: () => import("./grep.ts" as string).then((m) => m.grepTool as Tool),
+  loop: () => import("./loop.ts" as string).then((m) => m.loopTool as Tool),
+  question: () => import("./question.ts" as string).then((m) => m.questionTool as Tool),
   read: () => import("./read.ts" as string).then((m) => m.readTool as Tool),
   search: () => import("./search.ts" as string).then((m) => m.searchTool as Tool),
   subagent: () => import("./subagent.ts" as string).then((m) => m.subagentTool as Tool),

@@ -18,13 +18,19 @@ import type {
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentContext } from "./ctx.ts"
 import type { AgentEvents, AgentStatus, AgentStop, AgentStopKind } from "./events.ts"
+import type { LoopQuestion } from "./loop/types.ts"
 import type { Session } from "./session/session.ts"
 import type { AgentOptions, ContextPressure, SendMode, StepResult, TurnResult } from "./types.ts"
 
 import { AiError, isContextOverflow, runTool } from "@zaly/ai"
 import { Emitter, toValue, toError } from "@zaly/shared"
+import { LoopController } from "./loop/controller.ts"
 import { StopPolicy } from "./stop.ts"
 import { Tasks, taskCompletionMessage, taskInfoPart } from "./tasks.ts"
+import { loopTool } from "./tools/loop.ts"
+import { questionTool } from "./tools/question.ts"
+import { subagentTool } from "./tools/subagent.ts"
+import { wakeupTool } from "./tools/wakeup.ts"
 import { TokenUsage } from "./utils/usage.ts"
 import { uuidv7 } from "./utils/uuid.ts"
 
@@ -51,7 +57,12 @@ export class Agent extends Emitter<AgentEvents> {
   readonly #opts: AgentOptions
   readonly #ctx: AgentContext
   readonly #stopPolicy: StopPolicy
+  readonly #loopController: LoopController
   readonly #tasks: Tasks
+  /** Tools added by the harness itself (loop, question) rather than the
+   *  configured tool list. Kept separate so `agent.tools` stays a pure
+   *  projection. */
+  #extraTools: Tool[] = []
   /** Nesting depth — see `AgentOptions.depth`. Read-only; subagents pass
    *  `parent.depth + 1` when constructing their child. */
   readonly depth: number
@@ -68,6 +79,7 @@ export class Agent extends Emitter<AgentEvents> {
   #status: AgentStatus = "idle"
   #abortController?: AbortController
   #pauseRequested?: string
+  #steerRequested = false
   #running?: Promise<AgentStopKind>
   #usage: TokenUsage
 
@@ -77,7 +89,16 @@ export class Agent extends Emitter<AgentEvents> {
    *  and once something else has, the timer is moot. Hints from cancelled
    *  wakeups carry over as a system message so the intent doesn't
    *  evaporate. */
-  readonly #wakeups = new Map<string, { timer: ReturnType<typeof setTimeout>; hint?: string }>()
+  readonly #wakeups = new Map<
+    string,
+    {
+      timer: ReturnType<typeof setTimeout>
+      hint?: string
+      everyMs?: number
+      maxAttempts?: number
+      attempts: number
+    }
+  >()
 
   #lastStop?: AgentStop
 
@@ -127,6 +148,16 @@ export class Agent extends Emitter<AgentEvents> {
     this.onEmitError = (error) => opts.logger?.child("events").error(error)
     this.#ctx.attach(this)
 
+    this.#loopController = new LoopController(
+      this,
+      opts.loop === false ? undefined : opts.loop,
+      (state) => void this.emit("loop", { state })
+    )
+    if (this.#tasks.heartbeatMs === undefined && this.#loopController.active) {
+      this.#tasks.heartbeatMs = opts.loop === false ? undefined : opts.loop?.heartbeatMs
+    }
+    this.#syncExtraTools()
+
     // Seed usage
     this.#usage = new TokenUsage(this.messages)
     this.#ctx.on("session", () => this.reset())
@@ -136,9 +167,10 @@ export class Agent extends Emitter<AgentEvents> {
     this.stop({ abort: true, reason: "reset" })
     await this.waitIdle()
     await this.#tasks.killAll()
-    this.#cancelAllWakeups()
+    this.#cancelAllWakeups({ repeats: true })
     this.#usage = new TokenUsage(this.messages)
     this.#stopPolicy.reset({ keepUsage: false })
+    this.#loopController.reset()
     this.#injectQueue = []
     this.#appendQueue = []
     this.#notifyQueue = []
@@ -168,6 +200,8 @@ export class Agent extends Emitter<AgentEvents> {
     // the catalog is shared.
 
     let tools = [...this.tools].filter((t) => t.name !== "skill")
+    if (!overrides.loop) tools = tools.filter((t) => t.name !== "loop")
+    if (!overrides.question) tools = tools.filter((t) => t.name !== "question")
     if (childDepth >= this.maxDepth) tools = tools.filter((t) => t.name !== "subagent")
     const { createAgent } = await import("./ctx.ts")
 
@@ -268,7 +302,37 @@ export class Agent extends Emitter<AgentEvents> {
   }
 
   get tools() {
-    return this.#ctx.tools
+    return [...this.#ctx.tools, ...this.#extraTools]
+  }
+
+  /** LoopAgent controller — always present, `active` tells you whether
+   *  this agent is running as a loop. */
+  get loop(): LoopController {
+    return this.#loopController
+  }
+
+  /** Start or replace the LoopAgent goal. Passing `undefined` clears it
+   *  but keeps the controller available. */
+  setGoal(goal: string | undefined): void {
+    this.#loopController.setGoal(goal)
+    this.#syncExtraTools()
+  }
+
+  /** Recompute harness-owned tools after the configured tool list changes. */
+  syncTools(): void {
+    this.#syncExtraTools()
+  }
+
+  #syncExtraTools(): void {
+    const extra: Tool[] = []
+    const has = (name: string) => this.#ctx.tools.some((t) => t.name === name)
+    if (this.#loopController.active) {
+      if (!has("loop")) extra.push(loopTool)
+      if (!has("subagent")) extra.push(subagentTool)
+      if (!has("wakeup")) extra.push(wakeupTool)
+    }
+    if (this.#opts.question && !has("question")) extra.push(questionTool)
+    this.#extraTools = extra
   }
 
   get prompt() {
@@ -301,11 +365,22 @@ export class Agent extends Emitter<AgentEvents> {
    *  `inject` (default) delivers before the next model step without
    *  interrupting an active response or tool batch. `append` waits until
    *  the current turn finishes naturally and no injections remain.
+   *  `steer` aborts the in-flight stream but keeps the loop/turn alive:
+   *  the new message lands before the next step, so the model can change
+   *  direction without losing the conversation or tool results.
    *  Injections batch in queue order; appends run one send() submission
    *  at a time, keeping each submission's messages together.
    *  With `run: false`, only enqueue; omit messages to start/resume
    *  processing already queued work. */
   send(message?: Message | Message[], opts: { mode?: SendMode; run?: boolean } = {}): void {
+    if (opts.mode === "steer") {
+      this.#steerRequested = true
+      this.#abortController?.abort("steer")
+      this.#enqueue(message ?? [], { mode: "inject" })
+      if (opts.run === false) return
+      if (this.#status === "idle" || this.#status === "paused") void this.run()
+      return
+    }
     this.#enqueue(message ?? [], opts)
     if (opts.run === false) return
     if (this.#status === "idle" || this.#status === "paused") void this.run()
@@ -372,56 +447,85 @@ export class Agent extends Emitter<AgentEvents> {
     this.#notifyQueue.push(meta)
   }
 
-  /** Schedule a one-shot wake-up at `delayMs` from now. The agent will
-   *  receive a system message at that time IF nothing else has woken
-   *  the loop in the meantime — task-done injects, heartbeats, and user
-   *  messages all auto-cancel pending wakeups (their job was to ensure
-   *  the agent gets a turn; if it's already getting one, the timer is
-   *  redundant).
+  /** Schedule a wake-up of the agent loop. With `delayMs` it fires once;
+   *  with `everyMs` it repeats until `maxAttempts` is reached. One-shot
+   *  wakeups are cancelled when something else wakes the loop first;
+   *  repeating wakeups (watch mode) survive unrelated activity.
    *
-   *  Cancelled wakeups don't silently disappear — their `hint`s, if any,
-   *  are folded into a system message that lands in the next step
-   *  alongside whatever woke the loop. The model sees the hints with a
-   *  `status="cancelled"` marker so it knows the timer didn't fire.
-   *
-   *  Returns the wakeup id (mostly for telemetry / TUI display — the
-   *  model can't usefully cancel it later, since by the time it has a
-   *  turn to call cancel, the wakeup has either fired or been cancelled
-   *  for it). */
-  scheduleWakeup(opts: { delayMs: number; hint?: string }): string {
+   *  Returns the wakeup id. */
+  scheduleWakeup(opts: {
+    delayMs?: number
+    everyMs?: number
+    maxAttempts?: number
+    hint?: string
+  }): string {
     const id = uuidv7()
-    const timer = setTimeout(() => {
-      this.#wakeups.delete(id)
-      this.send({
-        content: [{ data: { hint: opts.hint, id }, tag: "wakeup", type: "meta" }],
-        role: "system",
-      })
-    }, opts.delayMs)
-    timer.unref()
-    this.#wakeups.set(id, { hint: opts.hint, timer })
+    const everyMs = opts.everyMs && opts.everyMs > 0 ? opts.everyMs : undefined
+    const delay = opts.delayMs ?? everyMs
+    if (delay === undefined || delay < 1) {
+      throw new Error("scheduleWakeup requires a positive delayMs or everyMs")
+    }
+
+    const entry = {
+      attempts: 0,
+      everyMs,
+      hint: opts.hint,
+      maxAttempts: opts.maxAttempts,
+      timer: undefined as unknown as ReturnType<typeof setTimeout>,
+    }
+    const arm = (ms: number) => {
+      entry.timer = setTimeout(() => {
+        entry.attempts++
+        const final =
+          entry.everyMs === undefined ||
+          (entry.maxAttempts !== undefined && entry.attempts >= entry.maxAttempts)
+        if (final) this.#wakeups.delete(id)
+        this.send({
+          content: [
+            {
+              content: opts.hint,
+              data: {
+                attempt: entry.attempts,
+                everyMs: entry.everyMs,
+                hint: opts.hint,
+                id,
+                maxAttempts: entry.maxAttempts,
+              },
+              tag: "wakeup",
+              type: "meta",
+            },
+          ],
+          role: "system",
+        })
+        if (!final && entry.everyMs) arm(entry.everyMs)
+      }, ms)
+      entry.timer.unref()
+    }
+    arm(delay)
+    this.#wakeups.set(id, entry)
     return id
   }
 
-  /** Cancel all pending wakeups, surfacing their hints as a single
-   *  system message so the model can see what was queued. Called from
-   *  `#setStatus` whenever the agent transitions to `streaming` — that's
-   *  the unambiguous "loop is active" signal. */
-  #cancelAllWakeups(): void {
+  /** Cancel pending wakeups, surfacing their hints as a single system
+   *  message so the model can see what was queued. One-shot wakeups are
+   *  cancelled by `#setStatus` on an external wake; repeating wakeups are
+   *  left alone unless `repeats` is set (reset / dispose). */
+  #cancelAllWakeups(opts: { repeats?: boolean } = {}): void {
     if (this.#wakeups.size === 0) return
     const carried: { id: string; hint: string }[] = []
-    for (const [id, { hint, timer }] of this.#wakeups) {
-      clearTimeout(timer)
-      if (hint) carried.push({ hint, id })
+    for (const [id, entry] of this.#wakeups) {
+      if (entry.everyMs !== undefined && !opts.repeats) continue
+      clearTimeout(entry.timer)
+      if (entry.hint) carried.push({ hint: entry.hint, id })
+      this.#wakeups.delete(id)
     }
-    this.#wakeups.clear()
-    if (carried.length > 0) {
-      const parts: MetaPart[] = carried.map((c) => ({
-        data: { hint: c.hint, id: c.id, status: "cancelled" as const },
-        tag: "wakeup",
-        type: "meta",
-      }))
-      this.#injectQueue.push({ content: parts, role: "system" })
-    }
+    if (carried.length === 0) return
+    const parts: MetaPart[] = carried.map((c) => ({
+      data: { hint: c.hint, id: c.id, status: "cancelled" as const },
+      tag: "wakeup",
+      type: "meta",
+    }))
+    this.#injectQueue.push({ content: parts, role: "system" })
   }
 
   // ── Loop control ─────────────────────────────────────────────────────
@@ -435,13 +539,16 @@ export class Agent extends Emitter<AgentEvents> {
     if (this.#running) return this.#running
     this.#pauseRequested = undefined
     this.#abortController = undefined
+    this.#steerRequested = false
     this.#running = this.#loop()
-      .catch((error) => {
+      .catch(async (error) => {
         this.#opts.logger?.child("run").error(error)
-        return this.#stop(
+        const ret = this.#stop(
           error instanceof Error && error.name === "AbortError" ? "aborted" : "error",
           error
         )
+        await this.#loopController.flush()
+        return ret
       })
       .finally(() => {
         this.#abortController = undefined
@@ -526,6 +633,8 @@ export class Agent extends Emitter<AgentEvents> {
     }
 
     this.#usage.add(collected.meta.usage)
+    this.#loopController.onStep()
+    this.#loopController.onStepSuccess()
 
     const result: Omit<StepResult, "kind"> = {
       finishReason: collected.meta.finishReason,
@@ -550,6 +659,7 @@ export class Agent extends Emitter<AgentEvents> {
 
     const calls = await this.#parseToolCalls(collected)
     await this.session.add(collected)
+    for (const call of calls) this.#loopController.onToolCall(call)
 
     if (calls.length === 0) return { kind: "natural", ...result }
 
@@ -605,6 +715,7 @@ export class Agent extends Emitter<AgentEvents> {
     const resultParts = await this.#tasks.run(calls, await this.#toolContext(), {
       onResult: (call, result) => {
         emitted.add(call.id)
+        this.#loopController.onToolResult(call, result)
         void this.emit("tool-result", { call, result })
       },
     })
@@ -613,14 +724,16 @@ export class Agent extends Emitter<AgentEvents> {
       const call = calls[i]
       const part = resultParts[i]
       if (emitted.has(call.id)) continue
+      const result = {
+        content: part.content,
+        error: part.error,
+        isError: part.isError ?? false,
+        meta: part.meta,
+      }
+      this.#loopController.onToolResult(call, result)
       void this.emit("tool-result", {
         call,
-        result: {
-          content: part.content,
-          error: part.error,
-          isError: part.isError ?? false,
-          meta: part.meta,
-        },
+        result,
       })
     }
     const message: Message<"tool"> = { content: resultParts, role: "tool" }
@@ -658,6 +771,7 @@ export class Agent extends Emitter<AgentEvents> {
    * When `abort: false`, the agent still stops immediately, but any active
    * stream or tool calls are left to run to completion */
   stop(opts: { abort?: boolean; reason?: string } = {}): void {
+    this.#steerRequested = false
     this.#pauseRequested ??= opts.reason ?? "stop"
     if (opts.abort ?? true) this.#abortController?.abort(opts.reason)
   }
@@ -666,6 +780,14 @@ export class Agent extends Emitter<AgentEvents> {
     if (this.#started) return
     this.#started = true
     await this.emit("start")
+    const saved = this.session.loop
+    if (saved?.status === "running") {
+      this.notify("loop-interrupted", {
+        goal: saved.goal,
+        iteration: saved.iteration,
+        phase: saved.phase,
+      })
+    }
   }
 
   get started() {
@@ -676,6 +798,7 @@ export class Agent extends Emitter<AgentEvents> {
 
   async #turn(): Promise<TurnResult> {
     for (let step = 1; ; step++) {
+      if (this.#steerPending()) return { kind: "steered" }
       if (this.#abortController?.signal.aborted)
         return { kind: "aborted", reason: this.#abortController.signal.reason }
       if (this.#pauseRequested !== undefined)
@@ -685,7 +808,10 @@ export class Agent extends Emitter<AgentEvents> {
       const outcome = await this.step()
       void this.emit("step-end", { outcome: outcome.kind, step })
 
+      if (this.#steerPending()) return { kind: "steered" }
+
       if (outcome.kind === "error") {
+        if (this.#steerPending()) return { kind: "steered" }
         return {
           kind: outcome.error?.name === "AbortError" ? "aborted" : "error",
           reason: outcome.error,
@@ -724,15 +850,37 @@ export class Agent extends Emitter<AgentEvents> {
     // Token totals stay sticky across resets — they're billing-style
     // displays, not per-turn caps.
     this.#stopPolicy.reset()
+    this.#loopController.reset()
     for (let turn = 1; ; turn++) {
       // Start one append submission only after pending injections have settled.
       if (this.#injectQueue.length === 0)
         for (const m of this.#appendQueue.shift() ?? []) await this.session.add(m)
 
+      this.#loopController.turnStart(turn)
       void this.emit("turn-start", { turn })
       const result = await this.#turn()
       const reason = result.reason ? toError(result.reason).message : undefined
       void this.emit("turn-end", { outcome: result.kind, reason, turn })
+
+      if (result.kind === "steered") {
+        this.#steerRequested = false
+        this.#abortController = undefined
+        continue
+      }
+
+      if (result.kind === "error") {
+        const retry = this.#loopController.retry(result.reason)
+        if (retry) {
+          this.notify("loop-retry", {
+            attempt: retry.attempt,
+            delayMs: retry.delayMs,
+            error: reason,
+          })
+          await sleep(retry.delayMs)
+          continue
+        }
+        return await this.#finishLoop("error", result.reason)
+      }
 
       // If the model stopped naturally but there are still queued messages,
       // keep the loop alive to process them.
@@ -742,8 +890,38 @@ export class Agent extends Emitter<AgentEvents> {
       )
         continue
 
-      return this.#stop(result.kind, result.reason)
+      if (result.kind === "natural") {
+        const decision = await this.#loopController.afterTurn(result, this)
+        if (decision.action === "continue") {
+          if (decision.inject) {
+            this.#injectQueue.push({
+              content: [
+                {
+                  content: decision.inject.content,
+                  data: decision.inject.data,
+                  tag: decision.inject.tag,
+                  type: "meta",
+                },
+              ],
+              role: "system",
+            })
+          }
+          continue
+        }
+        return await this.#finishLoop(
+          (decision.kind ?? "natural") as AgentStopKind,
+          decision.reason
+        )
+      }
+
+      return await this.#finishLoop(result.kind, result.reason)
     }
+  }
+
+  async #finishLoop(kind: AgentStopKind, reason?: unknown): Promise<AgentStopKind> {
+    const ret = this.#stop(kind, reason)
+    await this.#loopController.flush()
+    return ret
   }
 
   #stop(kind: AgentStopKind, reason?: unknown): AgentStopKind {
@@ -752,7 +930,10 @@ export class Agent extends Emitter<AgentEvents> {
       kind,
       reason: reason === undefined ? undefined : toError(reason).message,
     }
-    this.#setStatus(kind === "natural" ? "idle" : "paused")
+    this.#loopController.stop(kind, this.#lastStop.reason)
+    this.#syncExtraTools()
+    const done = kind === "natural" || kind === "goal-met"
+    this.#setStatus(done ? "idle" : "paused")
     void this.emit("stop", {
       status: this.#status,
       usage: this.usage,
@@ -771,13 +952,28 @@ export class Agent extends Emitter<AgentEvents> {
       bash: this.#opts.bash,
       cwd: this.cwd,
       isMasked: (msgId: string, partIdx?: number) => masker?.isMasked(msgId, partIdx) ?? false,
+      loop: this.#loopController,
       messages: this.session.messages,
       need: (scope, input) => this.#need(scope, input),
       perms: await this.ctx.permissions(),
+      question: (req) => this.question(req),
       sessionDir: this.session.dir,
       signal: this.#abortController?.signal,
       swarm: () => this.#ctx.swarm(),
       tasks: this.#tasks,
+    }
+  }
+
+  /** Ask the user a structured question. The run is reported as
+   *  `waiting` for the duration, matching the permission-prompt path. */
+  async question(req: LoopQuestion): Promise<string | undefined> {
+    if (!this.#opts.question) return undefined
+    const prev = this.#status
+    this.#setStatus("waiting")
+    try {
+      return await this.#opts.question(req)
+    } finally {
+      this.#setStatus(prev)
     }
   }
 
@@ -825,8 +1021,12 @@ export class Agent extends Emitter<AgentEvents> {
    *  runner on completion) should invoke this explicitly. */
   async dispose(): Promise<void> {
     this.clearListeners()
-    this.#cancelAllWakeups()
+    this.#cancelAllWakeups({ repeats: true })
     await this.#tasks.killAll()
+  }
+
+  #steerPending(): boolean {
+    return this.#steerRequested
   }
 
   #setStatus(status: AgentStatus): void {
@@ -846,4 +1046,8 @@ export class Agent extends Emitter<AgentEvents> {
     this.#status = status
     void this.emit("status", { status })
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

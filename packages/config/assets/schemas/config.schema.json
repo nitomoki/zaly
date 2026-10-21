@@ -1,423 +1,466 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "additionalProperties": false,
-  "definitions": {
-    "AnyKey<BuiltinTool>": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/BuiltinTool"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "AnyTool": {
-      "$ref": "#/definitions/AnyKey%3CBuiltinTool%3E"
-    },
-    "BuiltinTool": {
-      "enum": [
-        "agent_send",
-        "agent_spawn",
-        "bash",
-        "edit",
-        "fetch",
-        "find",
-        "grep",
-        "read",
-        "search",
-        "subagent",
-        "task_list",
-        "task_poll",
-        "task_stop",
-        "wakeup",
-        "write"
-      ],
-      "type": "string"
-    },
-    "PermissionPresetName": {
-      "description": "Permission presets — verdict-keyed pattern lists in the same shape `parseRules` accepts. The TUI exposes these as `--preset strict`, `--preset readonly`, etc.; the manager resolves the chosen preset to the structured `Rule<string>[]` at construction.\n\nPattern grammar:   \"bash(ls:*)\"     → bash command pattern   \"read(/src/**)\"  → workspace-relative gitignore pattern   \"read(*)\"        → matches every read in any workspace   \"bash\"           → bare scope, equivalent to `bash(*)` (match any cmd)\n\nScope names are exact matches against the tool name they gate (snake_case). Underscored scopes work too (`task_stop`, `task_poll`).",
-      "enum": [
-        "strict",
-        "readonly",
-        "permissive",
-        "yolo"
-      ],
-      "type": "string"
-    },
-    "ReasoningEffort": {
-      "enum": [
-        "off",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max"
-      ],
-      "type": "string"
-    },
-    "ResourceFilter": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "description": "Whether the plugin is enabled. Defaults to true.",
-          "type": "boolean"
-        },
-        "exclude": {
-          "description": "When set, exclude the resources, matching these paths/globs from the plugin. Add a resource type to the exclude list to disable that resource type. For example, `[\"skills\"]` will disable all skills from the plugin. Exclude is applied after include.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "include": {
-          "description": "When set, only include the resources, matching these paths/globs from the plugin.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "ShikiSelection": {
-      "anyOf": [
-        {
-          "const": "auto",
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/ShikiTheme"
-        }
-      ]
-    },
-    "ShikiTheme": {
-      "enum": [
-        "andromeeda",
-        "aurora-x",
-        "ayu-dark",
-        "ayu-light",
-        "ayu-mirage",
-        "catppuccin-frappe",
-        "catppuccin-latte",
-        "catppuccin-macchiato",
-        "catppuccin-mocha",
-        "dark-plus",
-        "dracula",
-        "dracula-soft",
-        "everforest-dark",
-        "everforest-light",
-        "github-dark",
-        "github-dark-default",
-        "github-dark-dimmed",
-        "github-dark-high-contrast",
-        "github-light",
-        "github-light-default",
-        "github-light-high-contrast",
-        "gruvbox-dark-hard",
-        "gruvbox-dark-medium",
-        "gruvbox-dark-soft",
-        "gruvbox-light-hard",
-        "gruvbox-light-medium",
-        "gruvbox-light-soft",
-        "horizon",
-        "horizon-bright",
-        "houston",
-        "kanagawa-dragon",
-        "kanagawa-lotus",
-        "kanagawa-wave",
-        "laserwave",
-        "light-plus",
-        "material-theme",
-        "material-theme-darker",
-        "material-theme-lighter",
-        "material-theme-ocean",
-        "material-theme-palenight",
-        "min-dark",
-        "min-light",
-        "monokai",
-        "night-owl",
-        "night-owl-light",
-        "nord",
-        "one-dark-pro",
-        "one-light",
-        "plastic",
-        "poimandres",
-        "red",
-        "rose-pine",
-        "rose-pine-dawn",
-        "rose-pine-moon",
-        "slack-dark",
-        "slack-ochin",
-        "snazzy-light",
-        "solarized-dark",
-        "solarized-light",
-        "synthwave-84",
-        "tokyo-night",
-        "vesper",
-        "vitesse-black",
-        "vitesse-dark",
-        "vitesse-light"
-      ],
-      "type": "string"
-    }
-  },
+  "type": "object",
   "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "commands": {
-      "additionalProperties": false,
-      "properties": {
-        "actionPrefix": {
-          "description": "Prefix for command actions. Defaults to ``",
-          "type": "string"
-        },
-        "bash": {
-          "description": "Allow bash execution in commands. Defaults to true.",
-          "type": "boolean"
-        },
-        "expr": {
-          "description": "Allow js expressions in command templates. Defaults to true.",
-          "type": "boolean"
-        }
-      },
-      "type": "object"
-    },
-    "compaction": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "description": "Enable automatic compaction when context is full",
-          "type": "boolean"
-        },
-        "keepTokens": {
-          "description": "Existing messages up to this many tokens will be preserved in the context",
-          "type": "number"
-        },
-        "reasoning": {
-          "$ref": "#/definitions/ReasoningEffort",
-          "description": "Reasoning effort for the compaction summary"
-        },
-        "summaryTokens": {
-          "description": "Maximum number of tokens to use for the generated summary",
-          "type": "number"
-        },
-        "threshold": {
-          "description": "Threshold for automatic compaction.",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "keymap": {
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        ]
-      },
-      "type": "object"
-    },
-    "masking": {
-      "additionalProperties": false,
-      "properties": {
-        "delta": {
-          "description": "How far above the target ratio to trigger a new masking pass. Defaults to 0.25 (25%).",
-          "type": "number"
-        },
-        "enabled": {
-          "description": "Whether to enable masking. Defaults to true.",
-          "type": "boolean"
-        },
-        "keepTurns": {
-          "description": "How many turns to keep in the tail of the conversation, regardless of score. Defaults to 20.",
-          "type": "number"
-        },
-        "minTokens": {
-          "description": "Don't mask tool-result parts whose original content is shorter than this (estimated tokens). Skips tiny \"ok\"-style success messages where the stub would be larger than the original. Doesn't apply to attachments (always worth masking).",
-          "type": "number"
-        },
-        "target": {
-          "description": "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%).",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "model": {
-      "description": "Default model to use for the agent.",
-      "type": "string"
-    },
-    "permissions": {
-      "additionalProperties": false,
-      "properties": {
-        "allow": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "ask": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "deny": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "preset": {
-          "$ref": "#/definitions/PermissionPresetName",
-          "description": "Permissions preset to use. Defaults to \"permissive\"."
-        }
-      },
-      "type": "object"
-    },
-    "plugins": {
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
+      "type": "string",
+      "description": "Default model to use for the agent."
     },
     "reasoning": {
-      "$ref": "#/definitions/ReasoningEffort",
+      "type": "string",
+      "enum": [
+        "high",
+        "low",
+        "max",
+        "medium",
+        "minimal",
+        "off",
+        "xhigh"
+      ],
       "description": "Default reasoning effort."
     },
-    "resources": {
-      "additionalProperties": {
-        "$ref": "#/definitions/ResourceFilter"
-      },
-      "description": "Resource configuration for zaly.",
-      "type": "object"
-    },
-    "skills": {
-      "additionalProperties": false,
-      "properties": {
-        "actionPrefix": {
-          "description": "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`",
-          "type": "string"
-        },
-        "actions": {
-          "description": "Show skill actions. Defaults to true.",
-          "type": "boolean"
-        },
-        "enabled": {
-          "description": "Allow skills to be used by the agent. Defaults to true.",
-          "type": "boolean"
-        }
-      },
-      "type": "object"
-    },
-    "system": {
-      "additionalProperties": false,
-      "properties": {
-        "bash": {
-          "description": "Command used by the bash tool.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "git": {
-          "description": "Command used for git packs.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "npm": {
-          "description": "Package manager command used for npm packs.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
     "tools": {
+      "type": "array",
       "items": {
         "type": "string"
-      },
-      "type": "array"
+      }
     },
     "ui": {
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
-        "collapsedTools": {
-          "description": "Tools whose result body should be hidden in the UI.",
-          "items": {
-            "$ref": "#/definitions/AnyTool"
-          },
-          "type": "array"
+        "mode": {
+          "type": "string",
+          "enum": [
+            "fullscreen",
+            "scrollback"
+          ],
+          "description": "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer."
         },
         "copyOnSelect": {
           "type": "boolean"
         },
+        "collapsedTools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnyTool"
+          },
+          "description": "Tools whose result body should be hidden in the UI."
+        },
         "images": {
-          "description": "Render images, if supported by the terminal",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Render images, if supported by the terminal"
         },
         "listHeight": {
-          "description": "Maximum number of visible rows in selection lists, like pickers and autocomplete.",
-          "type": "number"
-        },
-        "mode": {
-          "description": "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.",
-          "enum": [
-            "scrollback",
-            "fullscreen"
-          ],
-          "type": "string"
+          "type": "number",
+          "description": "Maximum number of visible rows in selection lists, like pickers and autocomplete."
         },
         "reasoning": {
-          "description": "Whether to show the reasoning trace in the UI.",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to show the reasoning trace in the UI."
+        },
+        "theme": {
+          "type": "string",
+          "description": "Theme name or path to custom theme file"
+        },
+        "shiki": {
+          "type": "string",
+          "enum": [
+            "andromeeda",
+            "aurora-x",
+            "auto",
+            "ayu-dark",
+            "ayu-light",
+            "ayu-mirage",
+            "catppuccin-frappe",
+            "catppuccin-latte",
+            "catppuccin-macchiato",
+            "catppuccin-mocha",
+            "dark-plus",
+            "dracula",
+            "dracula-soft",
+            "everforest-dark",
+            "everforest-light",
+            "github-dark",
+            "github-dark-default",
+            "github-dark-dimmed",
+            "github-dark-high-contrast",
+            "github-light",
+            "github-light-default",
+            "github-light-high-contrast",
+            "gruvbox-dark-hard",
+            "gruvbox-dark-medium",
+            "gruvbox-dark-soft",
+            "gruvbox-light-hard",
+            "gruvbox-light-medium",
+            "gruvbox-light-soft",
+            "horizon",
+            "horizon-bright",
+            "houston",
+            "kanagawa-dragon",
+            "kanagawa-lotus",
+            "kanagawa-wave",
+            "laserwave",
+            "light-plus",
+            "material-theme",
+            "material-theme-darker",
+            "material-theme-lighter",
+            "material-theme-ocean",
+            "material-theme-palenight",
+            "min-dark",
+            "min-light",
+            "monokai",
+            "night-owl",
+            "night-owl-light",
+            "nord",
+            "one-dark-pro",
+            "one-light",
+            "plastic",
+            "poimandres",
+            "red",
+            "rose-pine",
+            "rose-pine-dawn",
+            "rose-pine-moon",
+            "slack-dark",
+            "slack-ochin",
+            "snazzy-light",
+            "solarized-dark",
+            "solarized-light",
+            "synthwave-84",
+            "tokyo-night",
+            "vesper",
+            "vitesse-black",
+            "vitesse-dark",
+            "vitesse-light"
+          ],
+          "description": "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it."
         },
         "sessionTree": {
-          "description": "What messages to show in the session tree. Defaults to assistant, reasoning, and tools.",
+          "type": "array",
           "items": {
+            "type": "string",
             "enum": [
               "assistant",
               "reasoning",
-              "tools",
-              "system"
-            ],
-            "type": "string"
+              "system",
+              "tools"
+            ]
           },
-          "type": "array"
-        },
-        "shiki": {
-          "$ref": "#/definitions/ShikiSelection",
-          "description": "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it."
-        },
-        "theme": {
-          "description": "Theme name or path to custom theme file",
-          "type": "string"
+          "description": "What messages to show in the session tree. Defaults to assistant, reasoning, and tools."
         },
         "transparent": {
-          "description": "Make the background transparent. Defaults to false.",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Make the background transparent. Defaults to false."
         },
         "treeHeight": {
-          "description": "Maximum number of visible rows in the session tree.",
-          "type": "number"
+          "type": "number",
+          "description": "Maximum number of visible rows in the session tree."
         }
       },
-      "type": "object"
+      "required": [],
+      "additionalProperties": false
+    },
+    "skills": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Allow skills to be used by the agent. Defaults to true."
+        },
+        "actions": {
+          "type": "boolean",
+          "description": "Show skill actions. Defaults to true."
+        },
+        "actionPrefix": {
+          "type": "string",
+          "description": "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "actionPrefix": {
+          "type": "string",
+          "description": "Prefix for command actions. Defaults to ``"
+        },
+        "bash": {
+          "type": "boolean",
+          "description": "Allow bash execution in commands. Defaults to true."
+        },
+        "expr": {
+          "type": "boolean",
+          "description": "Allow js expressions in command templates. Defaults to true."
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "description": "Template commands."
+    },
+    "compaction": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable automatic compaction when context is full"
+        },
+        "keepTokens": {
+          "type": "number",
+          "description": "Existing messages up to this many tokens will be preserved in the context"
+        },
+        "reasoning": {
+          "type": "string",
+          "enum": [
+            "high",
+            "low",
+            "max",
+            "medium",
+            "minimal",
+            "off",
+            "xhigh"
+          ],
+          "description": "Reasoning effort for the compaction summary"
+        },
+        "summaryTokens": {
+          "type": "number",
+          "description": "Maximum number of tokens to use for the generated summary"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "Threshold for automatic compaction."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "loop": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable LoopAgent behaviour even without a goal."
+        },
+        "profile": {
+          "type": "string",
+          "enum": [
+            "autonomous",
+            "ci",
+            "interactive",
+            "watch"
+          ]
+        },
+        "goal": {
+          "type": "string"
+        },
+        "maxTurns": {
+          "type": "number"
+        },
+        "maxWallTimeMs": {
+          "type": "number"
+        },
+        "maxCostUsd": {
+          "type": "number"
+        },
+        "maxNoProgressTurns": {
+          "type": "number"
+        },
+        "onNoProgress": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "reflect",
+            "stop"
+          ]
+        },
+        "heartbeatMs": {
+          "type": "number"
+        },
+        "verify": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cwd": {
+              "type": "string"
+            },
+            "timeoutMs": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "command"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "masking": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to enable masking. Defaults to true."
+        },
+        "minTokens": {
+          "type": "number",
+          "description": "Don't mask tool-result parts whose original content is shorter\nthan this (estimated tokens). Skips tiny \"ok\"-style success\nmessages where the stub would be larger than the original.\nDoesn't apply to attachments (always worth masking)."
+        },
+        "keepTurns": {
+          "type": "number",
+          "description": "How many turns to keep in the tail of the conversation, regardless\nof score. Defaults to 20."
+        },
+        "delta": {
+          "type": "number",
+          "description": "How far above the target ratio to trigger a new masking pass.\nDefaults to 0.25 (25%)."
+        },
+        "target": {
+          "type": "number",
+          "description": "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%)."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": [
+            "permissive",
+            "readonly",
+            "strict",
+            "yolo"
+          ],
+          "description": "Permissions preset to use. Defaults to \"permissive\"."
+        },
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deny": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resources": {
+      "$ref": "#/definitions/RecordstringResourceFilter",
+      "description": "Resource configuration for zaly."
+    },
+    "system": {
+      "type": "object",
+      "properties": {
+        "bash": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command used by the bash tool."
+        },
+        "git": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command used for git packs."
+        },
+        "npm": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Package manager command used for npm packs."
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "description": "System integrations and external commands used by zaly."
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "keymap": {
+      "$ref": "#/definitions/Recordstringstringstring"
     }
   },
-  "type": "object"
+  "required": [],
+  "additionalProperties": false,
+  "definitions": {
+    "AnyTool": {
+      "type": "string"
+    },
+    "RecordstringResourceFilter": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ResourceFilter"
+      }
+    },
+    "ResourceFilter": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the plugin is enabled. Defaults to true."
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When set, only include the resources, matching these paths/globs from the plugin."
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "Recordstringstringstring": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
 }

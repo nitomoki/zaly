@@ -30,6 +30,15 @@ export const statusline = widget((props: AppState) =>
 
         if (props.status !== "ready") components.push(s.accent(props.status))
 
+        if (props.loop?.status === "running") {
+          const limit = props.loop.limits.turns
+          components.push(
+            s.accent(
+              `loop ${props.loop.iteration}${limit ? `/${limit}` : ""} · ${props.loop.phase}`
+            )
+          )
+        }
+
         if (props.scroll.offset < props.scroll.total) {
           const pct = Math.round((props.scroll.offset / props.scroll.total) * 100)
           const pcts = pct > 0 ? ` (${pct}%)` : ""

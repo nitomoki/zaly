@@ -1,4 +1,5 @@
-import type { Message } from "@zaly/ai"
+import type { Message, ToolCallPart, ToolResultPart } from "@zaly/ai"
+import type { LoopSnapshot } from "../loop/types.ts"
 import type { SessionStore } from "./store.ts"
 import type {
   MaskCheckpoint,
@@ -137,6 +138,11 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#view.maskCheckpoint
   }
 
+  /** Most recent LoopAgent snapshot in the active chain, if any. */
+  get loop(): LoopSnapshot | undefined {
+    return this.#view.loop?.state
+  }
+
   get id(): string {
     return this.#id
   }
@@ -264,6 +270,60 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     return this.#commit({ ...opts, type: "mask-checkpoint" })
   }
 
+  /** Persist a compact LoopAgent snapshot. The latest node wins; earlier
+   *  snapshots stay in the DAG as history. */
+  async addLoop(state: LoopSnapshot): Promise<string> {
+    const uuid = await this.#commit({ state, type: "loop" })
+    const node = this.#view.nodes.get(uuid)
+    if (node?.type === "loop") this.#view.loop = node
+    return uuid
+  }
+
+  /** Repair assistant tool-calls that never received a tool result.
+   *
+   *  This is the crash-recovery path: the loop commits the assistant
+   *  message before dispatching tools, so a process death between those
+   *  two points leaves a provider-invalid history. We only repair the
+   *  trailing tool-call block — if later user/assistant messages exist,
+   *  inserting a tool result out of order would be worse than leaving it
+   *  alone. Returns the number of repaired calls. */
+  async repairInterrupted(): Promise<number> {
+    const messages = this.#view.messages
+    let lastAssistant = -1
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") {
+        lastAssistant = i
+        break
+      }
+    }
+    if (lastAssistant === -1) return 0
+
+    const assistant = messages[lastAssistant]
+    if (assistant.role !== "assistant" || typeof assistant.content === "string") return 0
+    const calls = assistant.content.filter((p): p is ToolCallPart => p.type === "tool-call")
+    if (calls.length === 0) return 0
+
+    const answered = new Set<string>()
+    for (let i = lastAssistant + 1; i < messages.length; i++) {
+      const m = messages[i]
+      if (m.role !== "tool") return 0
+      for (const p of m.content) answered.add(p.id)
+    }
+
+    const pending = calls.filter((c) => !answered.has(c.id))
+    if (pending.length === 0) return 0
+
+    const parts: ToolResultPart[] = pending.map((call) => ({
+      content: `This tool call was interrupted before it produced a result. Re-run it if the outcome is still needed.`,
+      id: call.id,
+      isError: true,
+      name: call.name,
+      type: "tool-result",
+    }))
+    await this.add({ content: parts, role: "tool" })
+    return parts.length
+  }
+
   async checkout(uuid: string): Promise<void> {
     if (this.#closed) throw new Error("Session is closed")
     this.#head = uuid
@@ -372,6 +432,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
     let cursor = opts.uuid ?? this.head
     let limit = opts.limit ?? Infinity
     let compact: SessionNode<"compact"> | undefined
+    let loop: SessionNode<"loop"> | undefined
     const messageNodes: SessionNode<"message">[] = []
     let maskCheckpoint: SessionNode<"mask-checkpoint"> | undefined
 
@@ -384,6 +445,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
       reverse.push(node)
       // Keep track if the last mask-checkpoint, until we hit a compaction.
       if (node.type === "mask-checkpoint" && !compact && !maskCheckpoint) maskCheckpoint = node
+      if (node.type === "loop" && !loop) loop = node
       if (node.type === "message") messageNodes.push(node)
       if (node.type === "compact" && (opts.active ?? true)) {
         if (compact) break // stop at the first compact
@@ -433,6 +495,7 @@ export class Session<T extends SessionStore = SessionStore> extends Emitter<Sess
 
     return {
       compact,
+      loop,
       maskCheckpoint,
       messages: messages.toReversed(),
       nodes,

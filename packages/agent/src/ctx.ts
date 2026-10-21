@@ -83,6 +83,12 @@ export class AgentContext extends Emitter<AgentContextEvents> {
     })
     // oxlint-disable-next-line no-await-in-loop
     for (const m of this.#opts.messages ?? []) await this.session.add(m)
+    const repaired = await this.session.repairInterrupted()
+    if (repaired > 0) {
+      this.#opts.logger?.warn(
+        `repaired ${repaired} interrupted tool call${repaired === 1 ? "" : "s"} from a previous run`
+      )
+    }
   }
 
   attach(agent: Agent) {

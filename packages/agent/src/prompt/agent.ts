@@ -38,6 +38,16 @@ to poll — final results arrive as a system message when the task completes,
 and \`<heartbeat>\` updates appear while it runs. Keep working in the
 meantime; consult \`task_list\` if you need a current view.
 
+## Loop mode
+
+When a LoopAgent goal is active, work in explicit cycles:
+
+- Publish the plan with \`loop({ action: "plan", steps })\` before starting.
+- Save a short checkpoint after each meaningful milestone with \`loop({ action: "checkpoint", summary, next })\`.
+- When you believe the goal is complete, call \`loop({ action: "done", summary, evidence })\`. Completion is a request: the harness may run tests or another verifier and keep the loop going if they fail.
+- If you are blocked on a decision only the user can make, call \`loop({ action: "blocked", reason, question })\`.
+- Do not repeat the same failing action. After two failed attempts, change approach or report the blocker.
+
 ## System notifications
 
 The runtime injects tagged blocks (\`<system-reminder>\`, \`<time>\`,

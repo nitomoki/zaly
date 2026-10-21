@@ -1,4 +1,5 @@
 import type { Message, StreamEvent, TokenCount, Tool, ToolCallPart, ToolResult } from "@zaly/ai"
+import type { LoopSnapshot } from "./loop/types.ts"
 
 // ── Agent event map ──────────────────────────────────────────────────────
 
@@ -27,6 +28,12 @@ export type AgentStopKind =
   | "paused"
   | "aborted"
   | "error"
+  | "steered"
+  | "goal-met"
+  | "no-progress"
+  | "budget-exhausted"
+  | "verification-failed"
+  | "blocked"
 
 /** Outcome kind of a single step (one provider round-trip + tool batch).
  *  Returned from `step()` so custom drivers can interleave their own
@@ -56,6 +63,7 @@ export type AgentEvents = {
   "step-end": { step: number; outcome: StepKind }
   "turn-start": { turn: number }
   "turn-end": { turn: number; outcome: AgentStopKind; reason?: string }
+  loop: { state: LoopSnapshot }
   stop: AgentStop & {
     usage: TokenCount
     status: AgentStatus

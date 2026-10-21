@@ -13,6 +13,7 @@ import type { Logger } from "@zaly/shared/logger"
 import type { Agent } from "./agent.ts"
 import type { CompactionOptions } from "./compaction/compactions.ts"
 import type { AgentStopKind, StepKind } from "./events.ts"
+import type { LoopOptions, LoopQuestion, LoopToolApi } from "./loop/types.ts"
 import type { MaskerOptions } from "./masker.ts"
 import type { NotifyOptions } from "./notify.ts"
 import type { PermissionScope, PermissionScopes } from "./permissions/handlers/registry.ts"
@@ -25,7 +26,7 @@ import type { StopOptions } from "./stop.ts"
 import type { Swarm } from "./swarm.ts"
 import type { Tasks } from "./tasks.ts"
 
-export type SendMode = "inject" | "append"
+export type SendMode = "inject" | "append" | "steer"
 
 // Declaration-merge agent-side capabilities into ToolContext. Importing
 // any agent code (which any consumer ultimately does) loads this file,
@@ -75,6 +76,13 @@ declare module "@zaly/ai" {
      *  add your own via declaration merging. */
     need?: <S extends PermissionScope>(scope: S, input: PermissionScopes[S]) => Promise<void>
     isMasked?: (msgId: string, partIdx?: number) => boolean
+    /** LoopAgent control surface. Present when the running agent has a
+     *  loop controller. Tools use it to publish plans, checkpoints,
+     *  completion requests, and blocked state. */
+    loop?: LoopToolApi
+    /** Ask the user a structured question. Resolves with the answer, or
+     *  `undefined` when no interactive UI is available. */
+    question?: (req: LoopQuestion) => Promise<string | undefined>
   }
 }
 
@@ -249,6 +257,12 @@ export interface AgentOptions extends CollectOptions {
   allow?: (req: PermissionRequest) => Promise<boolean>
 
   compaction?: MaybeGetter<Partial<CompactionOptions>>
+  /** LoopAgent settings. Omit for a normal interactive agent. */
+  loop?: LoopOptions | false
+  /** Resolver for structured questions from the model. The loop tool's
+   *  `blocked` action and dedicated `question` tool use it. Without a
+   *  callback, those tools report that no interactive user is available. */
+  question?: (req: LoopQuestion) => Promise<string | undefined>
   /** Override the default `bash` command used by the `bash` tool. */
   bash?: string[]
 

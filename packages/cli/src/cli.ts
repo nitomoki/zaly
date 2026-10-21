@@ -181,6 +181,19 @@ export function mainCommand(cli: Cli) {
         type: "boolean",
         description: "Print the resolved config and exit",
       },
+      loop: {
+        type: "boolean",
+        description: "Run as a LoopAgent (keep working until done or the budget runs out)",
+      },
+      goal: {
+        type: "string",
+        description: "LoopAgent goal. Enables loop mode.",
+      },
+      profile: {
+        type: "enum",
+        options: ["interactive", "autonomous", "ci", "watch"],
+        description: "LoopAgent profile",
+      },
       mode: {
         type: "enum",
         options: ["scrollback", "fullscreen"],

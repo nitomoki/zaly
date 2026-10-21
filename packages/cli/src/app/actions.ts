@@ -39,6 +39,31 @@ export function appActions({ app }: { app: App }) {
         if (effort) app.agent.ctx.reasoning = effort.text
       },
     },
+    "agent.loop": {
+      cmd: "loop",
+      desc: "Show the current LoopAgent goal, phase, progress, and budget.",
+      fn: () => {
+        const loop = app.agent.loop.state
+        const lines = [
+          `**Loop** ${loop.status} · ${loop.phase} · iteration ${loop.iteration}`,
+          loop.goal ? `**Goal:** ${loop.goal}` : undefined,
+          loop.reason ? `**Reason:** ${loop.reason}` : undefined,
+          `**Budget:** turns ${loop.budget.turns}/${loop.limits.turns ?? "∞"}, ` +
+            `steps ${loop.budget.steps}/${loop.limits.steps ?? "∞"}, ` +
+            `tokens ${loop.budget.tokens}, ` +
+            `cost $${loop.budget.costUsd.toFixed(4)}`,
+          `**Progress:** files changed ${loop.progress.filesChanged.length}, ` +
+            `commands ${loop.progress.commands}, errors ${loop.progress.errors}`,
+          loop.progress.verification
+            ? `**Verification:** ${loop.progress.verification.ok ? "passed" : "failed"}`
+            : undefined,
+          loop.progress.checkpoint?.summary
+            ? `**Checkpoint:** ${loop.progress.checkpoint.summary}`
+            : undefined,
+        ].filter((line): line is string => !!line)
+        app.ctx.info(lines.join("\n"))
+      },
+    },
     "agent.model": defineAction({
       args: {
         all: {

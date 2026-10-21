@@ -1,6 +1,8 @@
 export type * from "./types.ts"
 export type * from "./events.ts"
 export type * from "./stop.ts"
+export type * from "./loop/types.ts"
+export * from "./loop/index.ts"
 export type * from "./tasks.ts"
 export type * from "./agent.ts"
 export type * from "./ctx.ts"

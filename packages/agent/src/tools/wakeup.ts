@@ -40,26 +40,41 @@ export interface WakeupContext {
 export const wakeupTool = defineTool({
   name: "wakeup",
   desc:
-    "Schedule a one-shot wake-up of the agent loop. If `delayMs` elapses " +
-    "without anything else waking the loop (task completion, heartbeat, " +
-    "user message), you'll receive a system message with the optional " +
-    "`hint`. If something else wakes the loop first, the wakeup is " +
-    'cancelled — its hint still surfaces (with `status="cancelled"`) so ' +
-    "your reminder doesn't evaporate. Useful for polling external state " +
-    "or scheduling a return to a thought.",
+    "Schedule a wake-up of the agent loop. Use `delayMs` for a one-shot " +
+    "reminder, or `everyMs` to watch external state (a build, a deploy, a " +
+    "CI run) until `maxAttempts` is reached. One-shot wakeups are cancelled " +
+    "when something else wakes the loop first; repeating wakeups keep going. " +
+    "Useful for polling external state or scheduling a return to a thought.",
   parallel: true,
+  // oxlint-disable-next-line sort-keys -- semantic param order
   params: Type.Object({
-    delayMs: Type.Integer({
-      description: "How long to wait before waking up, in milliseconds. Minimum 1.",
-      minimum: 1,
-    }),
+    delayMs: Type.Optional(
+      Type.Integer({
+        description:
+          "How long to wait before the first wake-up, in milliseconds. " +
+          "Defaults to `everyMs` for repeating wakeups.",
+        minimum: 1,
+      })
+    ),
+    everyMs: Type.Optional(
+      Type.Integer({
+        description:
+          "Repeat interval in milliseconds. Use for watch mode. Stops after " +
+          "`maxAttempts` if set.",
+        minimum: 1,
+      })
+    ),
+    maxAttempts: Type.Optional(
+      Type.Integer({
+        description: "Maximum number of wake-ups for a repeating wakeup.",
+        minimum: 1,
+      })
+    ),
     hint: Type.Optional(
       Type.String({
         description:
           "Short text the wakeup carries — what you wanted to remember " +
-          "to do at this point. Surfaces in the system message whether " +
-          "the wakeup fires on its own timer or gets cancelled by another " +
-          "event. Keep it concise; treat it as a TODO line, not prose.",
+          "to do at this point. Keep it concise; treat it as a TODO line.",
       })
     ),
   }),
@@ -71,8 +86,20 @@ export const wakeupTool = defineTool({
         message: "wakeup requires an Agent reference on the context (set up by the agent harness).",
       })
     }
-    const id = ctx.agent.scheduleWakeup({ delayMs: args.delayMs, hint: args.hint })
-    const when = new Date(Date.now() + args.delayMs).toISOString()
-    return `wakeup ${id} scheduled for ${when}`
+    if (args.delayMs === undefined && args.everyMs === undefined) {
+      throw new AiError({
+        code: "INVALID_PARAMS",
+        message: "wakeup requires `delayMs` or `everyMs`.",
+      })
+    }
+    const id = ctx.agent.scheduleWakeup({
+      delayMs: args.delayMs,
+      everyMs: args.everyMs,
+      hint: args.hint,
+      maxAttempts: args.maxAttempts,
+    })
+    const when = new Date(Date.now() + (args.delayMs ?? args.everyMs ?? 0)).toISOString()
+    const repeat = args.everyMs ? ` every ${args.everyMs}ms` : ""
+    return `wakeup ${id} scheduled for ${when}${repeat}`
   },
 })
