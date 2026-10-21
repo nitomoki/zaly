@@ -76,6 +76,8 @@ export type ResolvedConfig = {
   loop: {
     /** Enable LoopAgent behaviour even without a goal. */
     enabled: boolean
+    /** Start the loop automatically when the TUI becomes ready. */
+    autoStart?: boolean
     profile: LoopProfile
     goal?: string
     maxTurns?: number
@@ -85,6 +87,7 @@ export type ResolvedConfig = {
     maxParallel?: number
     onNoProgress?: LoopNoProgressAction
     heartbeatMs?: number
+    watch?: { everyMs: number; maxAttempts?: number; hint?: string }
     verify?: { command: string[]; cwd?: string; timeoutMs?: number }
   }
   masking: {

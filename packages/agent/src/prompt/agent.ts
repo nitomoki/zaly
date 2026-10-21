@@ -48,6 +48,14 @@ When a LoopAgent goal is active, work in explicit cycles:
 - If you are blocked on a decision only the user can make, call \`loop({ action: "blocked", reason, question })\`.
 - Do not repeat the same failing action. After two failed attempts, change approach or report the blocker.
 
+## Watch mode
+
+When the watch profile is active, each run is one tick: inspect the current state, take one useful action, then end. The next interval wakeup resumes you. Do not busy-loop waiting for external state.
+
+## CI mode
+
+CI runs are non-interactive. Do not ask the user questions. If you are blocked, stop and report the blocker with the evidence you have.
+
 ## Supervisor mode
 
 When the supervisor profile is active, delegate independent work:

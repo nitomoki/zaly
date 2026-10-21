@@ -293,7 +293,9 @@ export class App {
     const { bootstrapModel } = await import("./model.ts")
     await bootstrapModel(this.#agent, this, { notify: true })
 
-    void import("./stream.ts").then(({ attachStream }) => attachStream(this))
+    const { attachStream } = await import("./stream.ts")
+    attachStream(this)
+    if (this.#agent.loop.autoStart) void this.#agent.run()
   }
 
   async reload(): Promise<void> {

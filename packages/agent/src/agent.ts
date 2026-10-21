@@ -327,9 +327,16 @@ export class Agent extends Emitter<AgentEvents> {
 
   #syncExtraTools(): void {
     const loopOpts = this.#opts.loop === false ? undefined : this.#opts.loop
-    const parallel =
+    let parallel =
       this.#opts.maxParallel ??
       (this.#loopController.active ? (loopOpts?.maxParallel ?? 4) : Number.POSITIVE_INFINITY)
+    if (
+      this.#loopController.active &&
+      this.#loopController.profile === "ci" &&
+      this.#opts.maxParallel === undefined
+    ) {
+      parallel = Math.min(parallel, 2)
+    }
     this.#tasks.maxParallel = Number.isFinite(parallel) ? Math.max(1, parallel) : parallel
     const extra: Tool[] = []
     const has = (name: string) => this.#ctx.tools.some((t) => t.name === name)
@@ -342,7 +349,9 @@ export class Agent extends Emitter<AgentEvents> {
         if (!has("agent_send")) extra.push(agentSendTool)
       }
     }
-    if (this.#opts.question && !has("question")) extra.push(questionTool)
+    if (this.#opts.question && this.#loopController.allowQuestions && !has("question")) {
+      extra.push(questionTool)
+    }
     this.#extraTools = extra
   }
 
@@ -384,6 +393,9 @@ export class Agent extends Emitter<AgentEvents> {
    *  With `run: false`, only enqueue; omit messages to start/resume
    *  processing already queued work. */
   send(message?: Message | Message[], opts: { mode?: SendMode; run?: boolean } = {}): void {
+    let incoming: Message[] = []
+    if (message !== undefined) incoming = Array.isArray(message) ? message : [message]
+    if (incoming.some((m) => m.role === "user")) this.#loopController.unblock()
     if (opts.mode === "steer") {
       this.#steerRequested = true
       this.#abortController?.abort("steer")
@@ -517,6 +529,14 @@ export class Agent extends Emitter<AgentEvents> {
     return id
   }
 
+  /** Cancel one wakeup by id. Used by watch mode when the loop stops. */
+  cancelWakeup(id: string): void {
+    const entry = this.#wakeups.get(id)
+    if (!entry) return
+    clearTimeout(entry.timer)
+    this.#wakeups.delete(id)
+  }
+
   /** Cancel pending wakeups, surfacing their hints as a single system
    *  message so the model can see what was queued. One-shot wakeups are
    *  cancelled by `#setStatus` on an external wake; repeating wakeups are
@@ -573,7 +593,7 @@ export class Agent extends Emitter<AgentEvents> {
     const context = {
       cacheKey: this.ctx.session.id,
       messages: [...this.ctx.messages],
-      prompt: this.prompt,
+      prompt: [...this.prompt, ...this.#loopController.prompt()],
       sessionId: this.ctx.session.id,
       tools: this.tools,
     } satisfies Context
@@ -861,13 +881,13 @@ export class Agent extends Emitter<AgentEvents> {
     // Token totals stay sticky across resets — they're billing-style
     // displays, not per-turn caps.
     this.#stopPolicy.reset()
-    this.#loopController.reset()
+    this.#loopController.beginRun()
     for (let turn = 1; ; turn++) {
       // Start one append submission only after pending injections have settled.
       if (this.#injectQueue.length === 0)
         for (const m of this.#appendQueue.shift() ?? []) await this.session.add(m)
 
-      this.#loopController.turnStart(turn)
+      this.#loopController.turnStart()
       void this.emit("turn-start", { turn })
       const result = await this.#turn()
       const reason = result.reason ? toError(result.reason).message : undefined
@@ -978,7 +998,7 @@ export class Agent extends Emitter<AgentEvents> {
   /** Ask the user a structured question. The run is reported as
    *  `waiting` for the duration, matching the permission-prompt path. */
   async question(req: LoopQuestion): Promise<string | undefined> {
-    if (!this.#opts.question) return undefined
+    if (!this.#opts.question || !this.#loopController.allowQuestions) return undefined
     const prev = this.#status
     this.#setStatus("waiting")
     try {

@@ -46,6 +46,7 @@ export class LoopController implements LoopToolApi {
 
   #goal?: string
   #completedGoal?: string
+  #finished = false
   #phase: LoopPhase = "idle"
   #status: LoopSnapshot["status"] = "idle"
   #reason?: string
@@ -66,6 +67,7 @@ export class LoopController implements LoopToolApi {
   #persistPromise: Promise<void> = Promise.resolve()
   #reflections = 0
   #retries = 0
+  #watchId?: string
 
   constructor(
     agent: Agent,
@@ -81,6 +83,19 @@ export class LoopController implements LoopToolApi {
     this.#todos = saved?.todos
     this.#phase = saved?.phase ?? (this.#goal ? "plan" : "idle")
     this.#status = saved?.status ?? "idle"
+    this.#startedAt = saved?.startedAt ?? Date.now()
+    this.#turns = saved?.budget.turns ?? 0
+    this.#steps = saved?.budget.steps ?? 0
+    this.#toolCalls = saved?.budget.toolCalls ?? 0
+    this.#iteration = saved?.iteration ?? 0
+    if (saved?.progress) {
+      this.#progress = {
+        ...saved.progress,
+        filesChanged: [...saved.progress.filesChanged],
+        filesRead: [...saved.progress.filesRead],
+      }
+    }
+    this.#finished = saved?.status === "done" || saved?.status === "stopped"
     if (saved?.status === "running") {
       this.#status = "idle"
       this.#reason = "previous loop was interrupted"
@@ -89,7 +104,7 @@ export class LoopController implements LoopToolApi {
 
   /** True when this agent should behave as a LoopAgent. */
   get active(): boolean {
-    if (this.#status === "done") return false
+    if (this.#finished) return false
     if (this.#opts.enabled === true) return true
     if (
       this.#opts.enabled === false &&
@@ -114,6 +129,41 @@ export class LoopController implements LoopToolApi {
   /** Supervisor profile: expose the swarm tools for delegated work. */
   get supervisor(): boolean {
     return this.#opts.profile === "supervisor"
+  }
+
+  get profile(): LoopProfile {
+    return this.#opts.profile
+  }
+
+  get autoStart(): boolean {
+    return this.#opts.autoStart === true
+  }
+
+  /** CI runs are non-interactive; blocked questions turn into a stop. */
+  get allowQuestions(): boolean {
+    return this.#opts.profile !== "ci"
+  }
+
+  /** Goal text appended to the system prompt for the first and every
+   *  subsequent request while the goal is active. */
+  prompt(): string[] {
+    if (!this.active) return []
+    if (this.#goal === undefined) {
+      return [
+        '## LoopAgent\nLoop mode is active. Inspect the current state and decide the next action. Call `loop({ action: "done", summary, evidence })` when the work is complete.',
+      ]
+    }
+    return [
+      [
+        "## LoopAgent",
+        `Goal: ${this.#goal}`,
+        "",
+        'Work in explicit cycles. Publish a plan with `loop({ action: "plan", steps })`,',
+        'checkpoint after milestones, and call `loop({ action: "done", summary, evidence })`',
+        "only when the goal is complete. If blocked on a user decision, use",
+        '`loop({ action: "blocked", reason, question })`.',
+      ].join("\n"),
+    ]
   }
 
   get state(): LoopSnapshot {
@@ -142,6 +192,7 @@ export class LoopController implements LoopToolApi {
       profile: this.#opts.profile,
       progress,
       reason: this.#reason,
+      startedAt: this.#startedAt,
       status: this.#status,
       todos: this.#todos,
     }
@@ -149,20 +200,50 @@ export class LoopController implements LoopToolApi {
 
   setGoal(goal: string | undefined): void {
     if (goal === this.#goal && this.#status !== "done") return
+    if (goal === undefined) {
+      this.#completedGoal ??= this.#goal
+      this.#goal = undefined
+      this.#finished = true
+      this.#status = "stopped"
+      this.#phase = "stopped"
+      this.#cancelWatch()
+      this.#persist()
+      this.#emit()
+      return
+    }
     this.#goal = goal
     this.#completedGoal = undefined
-    this.#status = goal ? "idle" : this.#status
-    this.#phase = goal ? "plan" : "idle"
+    this.#finished = false
+    this.#status = "idle"
+    this.#phase = "plan"
     this.#reason = undefined
+    this.#turns = 0
+    this.#steps = 0
+    this.#toolCalls = 0
+    this.#tokens = 0
+    this.#costUsd = 0
+    this.#iteration = 0
+    this.#startedAt = Date.now()
+    this.#progress = emptyProgress()
+    this.#todos = undefined
+    this.#checkpoint = undefined
+    this.#completion = undefined
+    this.#blocked = undefined
+    this.#noProgressTurns = 0
+    this.#lastFingerprint = undefined
+    this.#reflections = 0
+    this.#retries = 0
     this.#persist()
     this.#emit()
   }
 
   reset(): void {
+    this.#cancelWatch()
     if (this.#status === "done" && this.#goal !== undefined) {
       this.#completedGoal = this.#goal
       this.#goal = undefined
     }
+    this.#finished = false
     this.#turns = 0
     this.#steps = 0
     this.#toolCalls = 0
@@ -184,11 +265,17 @@ export class LoopController implements LoopToolApi {
     this.#reason = undefined
   }
 
-  turnStart(turn: number): void {
+  /** Prepare a new `run()` without resetting goal-level counters. */
+  beginRun(): void {
+    this.#retries = 0
+  }
+
+  turnStart(): void {
     if (!this.active) return
-    this.#turns = turn
-    this.#iteration = turn
+    this.#turns++
+    this.#iteration = this.#turns
     this.#status = "running"
+    this.#scheduleWatch()
     if (this.#phase === "idle" || this.#phase === "plan" || this.#phase === "done") {
       this.#phase = "act"
     }
@@ -342,6 +429,13 @@ export class LoopController implements LoopToolApi {
     const noProgress = await this.#checkNoProgress(agent)
     if (noProgress) return noProgress
 
+    if (this.#opts.profile === "watch") {
+      this.#phase = "act"
+      this.#persist()
+      this.#emit()
+      return { action: "stop", kind: "natural", reason: "watch: waiting for next interval" }
+    }
+
     if (this.#goal || this.#opts.enabled === true || this.#opts.profile !== "interactive") {
       this.#phase = "act"
       this.#persist()
@@ -365,6 +459,15 @@ export class LoopController implements LoopToolApi {
   stop(kind: string, reason?: string): void {
     if (!this.active && this.#status !== "done" && this.#status !== "blocked") return
     this.#reason = reason
+    if (
+      kind === "goal-met" ||
+      kind === "no-progress" ||
+      kind === "budget-exhausted" ||
+      kind === "verification-failed"
+    ) {
+      this.#finished = true
+      this.#cancelWatch()
+    }
     if (kind === "goal-met") {
       this.#completedGoal ??= this.#goal
       this.#goal = undefined
@@ -373,6 +476,9 @@ export class LoopController implements LoopToolApi {
     } else if (kind === "blocked") {
       this.#status = "blocked"
       this.#phase = "blocked"
+    } else if (kind === "natural" || kind === "paused" || kind === "aborted" || kind === "error") {
+      this.#status = "idle"
+      this.#phase = "act"
     } else {
       this.#status = "stopped"
       this.#phase = "stopped"
@@ -426,6 +532,7 @@ export class LoopController implements LoopToolApi {
   }
 
   unblock(): void {
+    if (this.#blocked === undefined) return
     this.#blocked = undefined
     this.#phase = "act"
     this.#persist()
@@ -468,7 +575,7 @@ export class LoopController implements LoopToolApi {
       }
     }
 
-    const action = this.#opts.onNoProgress
+    const action = this.#opts.profile === "ci" ? "stop" : this.#opts.onNoProgress
     if (action === "ask") {
       const answer = await agent.question({
         context: this.#summary(),
@@ -512,6 +619,10 @@ export class LoopController implements LoopToolApi {
   }
 
   #finish(kind: LoopStopKind, reason: string): LoopDecision {
+    if (kind !== "blocked") {
+      this.#finished = true
+      this.#cancelWatch()
+    }
     if (kind === "goal-met") {
       this.#completedGoal = this.#goal
       this.#goal = undefined
@@ -584,6 +695,22 @@ export class LoopController implements LoopToolApi {
 
   async flush(): Promise<void> {
     await this.#persistPromise
+  }
+
+  #scheduleWatch(): void {
+    if (this.#opts.profile !== "watch" || this.#watchId !== undefined) return
+    const watch = this.#opts.watch ?? { everyMs: 60_000, maxAttempts: 60 }
+    this.#watchId = this.#agent.scheduleWakeup({
+      everyMs: Math.max(1, watch.everyMs),
+      hint: watch.hint ?? "watch: check state and continue",
+      maxAttempts: watch.maxAttempts,
+    })
+  }
+
+  #cancelWatch(): void {
+    if (this.#watchId === undefined) return
+    this.#agent.cancelWakeup(this.#watchId)
+    this.#watchId = undefined
   }
 
   #persist(): void {

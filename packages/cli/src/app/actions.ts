@@ -39,10 +39,28 @@ export function appActions({ app }: { app: App }) {
         if (effort) app.agent.ctx.reasoning = effort.text
       },
     },
-    "agent.loop": {
+    "agent.loop": defineAction({
+      args: {
+        clear: {
+          desc: "Clear the current goal and stop looping.",
+          type: "boolean",
+        },
+      },
       cmd: "loop",
-      desc: "Show the current LoopAgent goal, phase, progress, and budget.",
-      fn: () => {
+      desc: "Show, set, or clear the LoopAgent goal.",
+      fn: (ctx) => {
+        if (ctx.args?.clear) {
+          app.agent.setGoal(undefined)
+          app.notify("LoopAgent goal cleared.", { level: "info", title: "Loop" })
+          return
+        }
+        const goal = ctx.args?._.join(" ").trim()
+        if (goal) {
+          app.agent.setGoal(goal)
+          app.notify(`LoopAgent goal set: ${goal}`, { level: "info", title: "Loop" })
+          if (app.agent.status === "idle" || app.agent.status === "paused") void app.agent.run()
+          return
+        }
         const loop = app.agent.loop.state
         const lines = [
           `**Loop** ${loop.status} · ${loop.phase} · iteration ${loop.iteration}`,
@@ -63,7 +81,7 @@ export function appActions({ app }: { app: App }) {
         ].filter((line): line is string => !!line)
         app.ctx.info(lines.join("\n"))
       },
-    },
+    }),
     "agent.model": defineAction({
       args: {
         all: {
@@ -227,6 +245,20 @@ export function appActions({ app }: { app: App }) {
       fn: () => void app.composer.pickHistory(),
       keys: ["ctrl-r"],
     },
+    "composer.steer": defineAction({
+      args: {},
+      cmd: "steer",
+      desc: "Send a message that interrupts the current response and redirects the agent.",
+      fn: (ctx) => {
+        const text = ctx.args?._.join(" ").trim()
+        if (!text) {
+          app.notify("Usage: `/steer <message>`", { level: "warn" })
+          return
+        }
+        app.agent.send({ content: text, role: "user" }, { mode: "steer" })
+        app.composer.value = ""
+      },
+    }),
     "config.edit": defineAction({
       args: {
         project: {

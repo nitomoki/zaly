@@ -206,6 +206,93 @@ describe("LoopAgent", () => {
     expect(users).toContain("change direction")
   })
 
+  test("puts the goal in the first request's system prompt", async () => {
+    const model = mockModel([[{ delta: "ok", type: "text-delta" }, finish]])
+    const prompts: string[][] = []
+    const stream = model.provider.stream
+    model.provider.stream = (req) => {
+      prompts.push(req.ctx.prompt ?? [])
+      return stream(req)
+    }
+    const agent = await loadAgent({
+      loop: { goal: "ship the feature" },
+      messages: [{ content: "go", role: "user" }],
+      model,
+    })
+    await agent.run()
+    expect(prompts[0].some((p) => p.includes("Goal: ship the feature"))).toBe(true)
+  })
+
+  test("keeps budgets across runs instead of resetting per message", async () => {
+    const model = mockModel([
+      [{ delta: "one", type: "text-delta" }, finish],
+      [{ delta: "two", type: "text-delta" }, finish],
+    ])
+    const agent = await loadAgent({
+      loop: {
+        enabled: true,
+        maxNoProgressTurns: 100,
+        maxTurns: 2,
+        profile: "watch",
+      },
+      model,
+    })
+    agent.send({ content: "first", role: "user" })
+    expect(await agent.run()).toBe("natural")
+    agent.send({ content: "second", role: "user" })
+    expect(await agent.run()).toBe("budget-exhausted")
+    await agent.dispose()
+  })
+
+  test("does not restart a completed goal on the next message", async () => {
+    const model = mockModel([
+      [{ delta: "done", type: "text-delta" }, finish],
+      [{ delta: "hello", type: "text-delta" }, finish],
+    ])
+    const agent = await loadAgent({
+      loop: { doneWhen: () => true, goal: "finish" },
+      model,
+    })
+    agent.send({ content: "go", role: "user" })
+    expect(await agent.run()).toBe("goal-met")
+    expect(agent.loop.active).toBe(false)
+    agent.send({ content: "just a question", role: "user" })
+    expect(await agent.run()).toBe("natural")
+    expect(agent.loop.active).toBe(false)
+  })
+
+  test("does not keep looping after an explicit done in enabled mode", async () => {
+    const model = mockModel([
+      [
+        {
+          id: "c1",
+          name: "loop",
+          params: { action: "done", summary: "finished" },
+          type: "tool-call",
+        },
+        { finishReason: "tool-calls", type: "finish", usage: { input: 10, output: 2 } },
+      ],
+      [{ delta: "done", type: "text-delta" }, finish],
+      [{ delta: "answer", type: "text-delta" }, finish],
+    ])
+    const agent = await loadAgent({ loop: { enabled: true }, model })
+    agent.send({ content: "go", role: "user" })
+    expect(await agent.run()).toBe("goal-met")
+    expect(agent.loop.active).toBe(false)
+    agent.send({ content: "quick question", role: "user" })
+    expect(await agent.run()).toBe("natural")
+    expect(agent.loop.active).toBe(false)
+  })
+
+  test("ci profile is non-interactive and caps parallelism lower", async () => {
+    const agent = await loadAgent({
+      loop: { enabled: true, profile: "ci" },
+      model: mockModel([[finish]]),
+    })
+    expect(agent.loop.allowQuestions).toBe(false)
+    expect(agent.tasks.maxParallel).toBe(2)
+  })
+
   test("supervisor profile exposes swarm tools and caps parallelism", async () => {
     const agent = await loadAgent({
       loop: { enabled: true, profile: "supervisor" },

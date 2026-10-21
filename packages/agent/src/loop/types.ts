@@ -91,6 +91,8 @@ export interface LoopLimits {
 export interface LoopSnapshot {
   goal?: string
   phase: LoopPhase
+  /** Wall-clock start of the goal, preserved across runs. */
+  startedAt: number
   status: LoopStatus
   profile: LoopProfile
   iteration: number
@@ -106,6 +108,8 @@ export interface LoopSnapshot {
 export interface LoopOptions {
   /** Explicitly opt into looping even without a goal/verifier. */
   enabled?: boolean
+  /** Start a run as soon as the agent is ready (CLI --goal / --loop). */
+  autoStart?: boolean
   goal?: string
   /** Deterministic completion check. Runs after each natural turn. */
   doneWhen?: (state: LoopSnapshot) => boolean | Promise<boolean>
@@ -124,6 +128,8 @@ export interface LoopOptions {
   maxRetries?: number
   retryBaseMs?: number
   retryMaxMs?: number
+  /** Watch profile: wake the loop on this cadence and end the run between ticks. */
+  watch?: { everyMs: number; maxAttempts?: number; hint?: string }
 }
 
 export interface LoopInjection {

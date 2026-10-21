@@ -241,6 +241,10 @@
           "type": "boolean",
           "description": "Enable LoopAgent behaviour even without a goal."
         },
+        "autoStart": {
+          "type": "boolean",
+          "description": "Start the loop automatically when the TUI becomes ready."
+        },
         "profile": {
           "type": "string",
           "enum": [
@@ -279,6 +283,24 @@
         },
         "heartbeatMs": {
           "type": "number"
+        },
+        "watch": {
+          "type": "object",
+          "properties": {
+            "everyMs": {
+              "type": "number"
+            },
+            "maxAttempts": {
+              "type": "number"
+            },
+            "hint": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "everyMs"
+          ],
+          "additionalProperties": false
         },
         "verify": {
           "type": "object",

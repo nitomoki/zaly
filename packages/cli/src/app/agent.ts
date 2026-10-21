@@ -25,8 +25,17 @@ export async function loadAgent(app: App): Promise<Agent> {
   const loop = {
     ...settings.loop,
     ...(ctx.flags.loop ? { enabled: true } : {}),
-    ...(ctx.flags.goal ? { enabled: true, goal: ctx.flags.goal } : {}),
-    ...(ctx.flags.profile ? { profile: ctx.flags.profile } : {}),
+    ...(ctx.flags.goal ? { goal: ctx.flags.goal } : {}),
+    ...(ctx.flags.profile
+      ? {
+          autoStart:
+            ctx.flags.profile !== "interactive" ||
+            ctx.flags.loop === true ||
+            ctx.flags.goal !== undefined,
+          profile: ctx.flags.profile,
+        }
+      : {}),
+    ...(ctx.flags.goal || ctx.flags.loop ? { autoStart: true } : {}),
   }
 
   const loopActive =

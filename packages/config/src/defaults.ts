@@ -27,6 +27,7 @@ export const defaultSettings = {
     threshold: 0.95,
   },
   loop: {
+    autoStart: false,
     enabled: false,
     heartbeatMs: 30_000,
     maxNoProgressTurns: 3,
