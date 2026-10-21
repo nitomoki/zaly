@@ -353,6 +353,129 @@ Search file contents using rg/grep. Respects .gitignore by default when ripgrep 
 }
 ```
 
+## loop
+
+Control the current LoopAgent. Use `plan` to publish or update the task list, `checkpoint` to save a short progress note, `done` when you believe the goal is complete (the harness verifies before stopping), and `blocked` when you need user input or cannot proceed.
+
+### Parameters
+
+```json
+{
+  "type": "object",
+  "required": [
+    "action"
+  ],
+  "properties": {
+    "action": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "plan"
+        },
+        {
+          "type": "string",
+          "const": "checkpoint"
+        },
+        {
+          "type": "string",
+          "const": "done"
+        },
+        {
+          "type": "string",
+          "const": "blocked"
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "pending"
+              },
+              {
+                "type": "string",
+                "const": "in_progress"
+              },
+              {
+                "type": "string",
+                "const": "done"
+              },
+              {
+                "type": "string",
+                "const": "cancelled"
+              }
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "next": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    }
+  }
+}
+```
+
+## question
+
+Ask the user a focused question and wait for the answer. Use when you are genuinely blocked on a decision that only the user can make. Prefer one question over a list; include options when the choice is finite.
+
+### Parameters
+
+```json
+{
+  "type": "object",
+  "required": [
+    "question"
+  ],
+  "properties": {
+    "question": {
+      "type": "string",
+      "description": "The question to ask."
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Suggested answers. The user can still type a free-form answer."
+    },
+    "multiple": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow selecting more than one option."
+    },
+    "context": {
+      "type": "string",
+      "description": "Short context that helps the user answer."
+    }
+  }
+}
+```
+
 ## read
 
 Read a file. Text files return plain text with line-range metadata. Image & PDF files are sent as attachments. Use `offset`/`limit` to slice large files.
@@ -535,25 +658,32 @@ Stop a running task. Aborts the underlying work (e.g. SIGTERM → SIGKILL for ba
 
 ## wakeup
 
-Schedule a one-shot wake-up of the agent loop. If `delayMs` elapses without anything else waking the loop (task completion, heartbeat, user message), you'll receive a system message with the optional `hint`. If something else wakes the loop first, the wakeup is cancelled — its hint still surfaces (with `status="cancelled"`) so your reminder doesn't evaporate. Useful for polling external state or scheduling a return to a thought.
+Schedule a wake-up of the agent loop. Use `delayMs` for a one-shot reminder, or `everyMs` to watch external state (a build, a deploy, a CI run) until `maxAttempts` is reached. One-shot wakeups are cancelled when something else wakes the loop first; repeating wakeups keep going. Useful for polling external state or scheduling a return to a thought.
 
 ### Parameters
 
 ```json
 {
   "type": "object",
-  "required": [
-    "delayMs"
-  ],
   "properties": {
     "delayMs": {
       "type": "integer",
-      "description": "How long to wait before waking up, in milliseconds. Minimum 1.",
+      "description": "How long to wait before the first wake-up, in milliseconds. Defaults to `everyMs` for repeating wakeups.",
+      "minimum": 1
+    },
+    "everyMs": {
+      "type": "integer",
+      "description": "Repeat interval in milliseconds. Use for watch mode. Stops after `maxAttempts` if set.",
+      "minimum": 1
+    },
+    "maxAttempts": {
+      "type": "integer",
+      "description": "Maximum number of wake-ups for a repeating wakeup.",
       "minimum": 1
     },
     "hint": {
       "type": "string",
-      "description": "Short text the wakeup carries — what you wanted to remember to do at this point. Surfaces in the system message whether the wakeup fires on its own timer or gets cancelled by another event. Keep it concise; treat it as a TODO line, not prose."
+      "description": "Short text the wakeup carries — what you wanted to remember to do at this point. Keep it concise; treat it as a TODO line."
     }
   }
 }

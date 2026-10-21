@@ -25,6 +25,9 @@ Run `zaly --help` or `zaly models --help` for installed-version help. See [insta
 | `--yolo`, `-y` | `boolean` | Use the yolo permissions preset (allow everything) |
 | `--permission` | `strict, readonly, permissive, yolo` | Permission preset (strict=ask for operations, readonly=allow common inspection/dev commands and ask for writes, permissive=broader dev access, yolo=allow everything). Overrides `yolo` if both are present. |
 | `--print-config` | `boolean` | Print the resolved config and exit |
+| `--loop` | `boolean` | Run as a LoopAgent (keep working until done or the budget runs out) |
+| `--goal` | `string` | LoopAgent goal. Enables loop mode. |
+| `--profile` | `interactive, autonomous, ci, watch, supervisor` | LoopAgent profile |
 | `--mode` | `scrollback, fullscreen` | Terminal mode |
 
 ## zaly models

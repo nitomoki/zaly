@@ -17,6 +17,14 @@ Change how much reasoning the model uses for future turns.
 Action: `agent.effort`
 
 
+## /loop
+
+Show, set, or clear the LoopAgent goal.
+
+Action: `agent.loop`
+
+- `--clear`: Clear the current goal and stop looping. (boolean)
+
 ## /model
 
 Switch the model used for future agent turns.
@@ -109,6 +117,13 @@ Action: `app.theme`
 Browse and pick from recent composer inputs.
 
 Action: `composer.history`
+
+
+## /steer
+
+Send a message that interrupts the current response and redirects the agent.
+
+Action: `composer.steer`
 
 
 ## /config
