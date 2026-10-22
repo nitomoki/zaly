@@ -1,907 +1,1575 @@
-import * as _assertGuard_1 from "typia/lib/internal/_assertGuard";
-import * as _accessExpressionAsString_1 from "typia/lib/internal/_accessExpressionAsString";
-const __typia_transform__accessExpressionAsString = _accessExpressionAsString_1._accessExpressionAsString;
-import type { KeyPatterns } from "@zaly/tui";
-import type { Config, TypiaConfig } from "../../types.ts";
-import { canonical } from "@zaly/tui";
-// IMPORTANT: always use typia import directly, otherwise generates code will
-// contain actual typia imports
-// oxlint-disable import/no-named-as-default-member
-const validator = (() => {
-    const _iv0 = new Set(["andromeeda", "aurora-x", "auto", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]);
-    const _ae0 = "(undefined | { mode?: \"fullscreen\" | \"scrollback\" | undefined; copyOnSelect?: boolean | undefined; collapsedTools?: AnyTool[] | undefined; images?: boolean | undefined; listHeight?: number | undefined; ... 5 more ...; treeHeight?: number | undefined; })";
-    const _ae1 = "(undefined | { enabled?: boolean | undefined; keepTokens?: number | undefined; reasoning?: ReasoningEffort | undefined; summaryTokens?: number | undefined; threshold?: number | undefined; })";
-    const _ae2 = "(undefined | { enabled?: boolean | undefined; autoStart?: boolean | undefined; profile?: LoopProfile | undefined; goal?: string | undefined; maxTurns?: number | undefined; maxWallTimeMs?: number | undefined; ... 6 more ...; verify?: { ...; } | undefined; })";
-    const _ae3 = "(undefined | { enabled?: boolean | undefined; minTokens?: number | undefined; keepTurns?: number | undefined; delta?: number | undefined; target?: number | undefined; })";
-    const _ae4 = "(undefined | { preset?: PermissionPresetName | undefined; allow?: string[] | undefined; deny?: string[] | undefined; ask?: string[] | undefined; })";
-    const _av0 = new Set(["andromeeda", "aurora-x", "auto", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"]);
-    const _ae5 = "(\"andromeeda\" | \"aurora-x\" | \"auto\" | \"ayu-dark\" | \"ayu-light\" | \"ayu-mirage\" | \"catppuccin-frappe\" | \"catppuccin-latte\" | \"catppuccin-macchiato\" | \"catppuccin-mocha\" | \"dark-plus\" | \"dracula\" | \"dracula-soft\" | \"everforest-dark\" | \"everforest-light\" | \"github-dark\" | \"github-dark-default\" | \"github-dark-dimmed\" | \"github-dark-high-contrast\" | \"github-light\" | \"github-light-default\" | \"github-light-high-contrast\" | \"gruvbox-dark-hard\" | \"gruvbox-dark-medium\" | \"gruvbox-dark-soft\" | \"gruvbox-light-hard\" | \"gruvbox-light-medium\" | \"gruvbox-light-soft\" | \"horizon\" | \"horizon-bright\" | \"houston\" | \"kanagawa-dragon\" | \"kanagawa-lotus\" | \"kanagawa-wave\" | \"laserwave\" | \"light-plus\" | \"material-theme\" | \"material-theme-darker\" | \"material-theme-lighter\" | \"material-theme-ocean\" | \"material-theme-palenight\" | \"min-dark\" | \"min-light\" | \"monokai\" | \"night-owl\" | \"night-owl-light\" | \"nord\" | \"one-dark-pro\" | \"one-light\" | \"plastic\" | \"poimandres\" | \"red\" | \"rose-pine\" | \"rose-pine-dawn\" | \"rose-pine-moon\" | \"slack-dark\" | \"slack-ochin\" | \"snazzy-light\" | \"solarized-dark\" | \"solarized-light\" | \"synthwave-84\" | \"tokyo-night\" | \"vesper\" | \"vitesse-black\" | \"vitesse-dark\" | \"vitesse-light\" | undefined)";
-    const _ao0 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.model || "string" === typeof input.model || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".model",
-        expected: "(string | undefined)",
-        value: input.model
-    }, _errorFactory)) && (undefined === input.reasoning || "high" === input.reasoning || "low" === input.reasoning || "max" === input.reasoning || "medium" === input.reasoning || "minimal" === input.reasoning || "off" === input.reasoning || "xhigh" === input.reasoning || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".reasoning",
-        expected: "(\"high\" | \"low\" | \"max\" | \"medium\" | \"minimal\" | \"off\" | \"xhigh\" | undefined)",
-        value: input.reasoning
-    }, _errorFactory)) && (undefined === input.tools || (Array.isArray(input.tools) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".tools",
-        expected: "(Array<string> | undefined)",
-        value: input.tools
-    }, _errorFactory)) && input.tools.every((elem: any, _index15: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".tools[" + _index15 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".tools",
-        expected: "(Array<string> | undefined)",
-        value: input.tools
-    }, _errorFactory)) && (undefined === input.ui || ("object" === typeof input.ui && null !== input.ui && false === Array.isArray(input.ui) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".ui",
-        expected: _ae0,
-        value: input.ui
-    }, _errorFactory)) && _ao1(input.ui, _path + ".ui", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".ui",
-        expected: _ae0,
-        value: input.ui
-    }, _errorFactory)) && (undefined === input.skills || ("object" === typeof input.skills && null !== input.skills && false === Array.isArray(input.skills) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".skills",
-        expected: "(undefined | { enabled?: boolean | undefined; actions?: boolean | undefined; actionPrefix?: string | undefined; })",
-        value: input.skills
-    }, _errorFactory)) && _ao2(input.skills, _path + ".skills", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".skills",
-        expected: "(undefined | { enabled?: boolean | undefined; actions?: boolean | undefined; actionPrefix?: string | undefined; })",
-        value: input.skills
-    }, _errorFactory)) && (undefined === input.commands || ("object" === typeof input.commands && null !== input.commands && false === Array.isArray(input.commands) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".commands",
-        expected: "(undefined | { actionPrefix?: string | undefined; bash?: boolean | undefined; expr?: boolean | undefined; })",
-        value: input.commands
-    }, _errorFactory)) && _ao3(input.commands, _path + ".commands", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".commands",
-        expected: "(undefined | { actionPrefix?: string | undefined; bash?: boolean | undefined; expr?: boolean | undefined; })",
-        value: input.commands
-    }, _errorFactory)) && (undefined === input.compaction || ("object" === typeof input.compaction && null !== input.compaction && false === Array.isArray(input.compaction) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".compaction",
-        expected: _ae1,
-        value: input.compaction
-    }, _errorFactory)) && _ao4(input.compaction, _path + ".compaction", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".compaction",
-        expected: _ae1,
-        value: input.compaction
-    }, _errorFactory)) && (undefined === input.loop || ("object" === typeof input.loop && null !== input.loop && false === Array.isArray(input.loop) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".loop",
-        expected: _ae2,
-        value: input.loop
-    }, _errorFactory)) && _ao5(input.loop, _path + ".loop", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".loop",
-        expected: _ae2,
-        value: input.loop
-    }, _errorFactory)) && (undefined === input.masking || ("object" === typeof input.masking && null !== input.masking && false === Array.isArray(input.masking) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".masking",
-        expected: _ae3,
-        value: input.masking
-    }, _errorFactory)) && _ao8(input.masking, _path + ".masking", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".masking",
-        expected: _ae3,
-        value: input.masking
-    }, _errorFactory)) && (undefined === input.permissions || ("object" === typeof input.permissions && null !== input.permissions && false === Array.isArray(input.permissions) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".permissions",
-        expected: _ae4,
-        value: input.permissions
-    }, _errorFactory)) && _ao9(input.permissions, _path + ".permissions", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".permissions",
-        expected: _ae4,
-        value: input.permissions
-    }, _errorFactory)) && (undefined === input.plugins || (Array.isArray(input.plugins) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".plugins",
-        expected: "(Array<string> | undefined)",
-        value: input.plugins
-    }, _errorFactory)) && input.plugins.every((elem: any, _index16: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".plugins[" + _index16 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".plugins",
-        expected: "(Array<string> | undefined)",
-        value: input.plugins
-    }, _errorFactory)) && (undefined === input.resources || ("object" === typeof input.resources && null !== input.resources && false === Array.isArray(input.resources) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".resources",
-        expected: "(Record<string, ResourceFilter> | undefined)",
-        value: input.resources
-    }, _errorFactory)) && _ao10(input.resources, _path + ".resources", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".resources",
-        expected: "(Record<string, ResourceFilter> | undefined)",
-        value: input.resources
-    }, _errorFactory)) && (undefined === input.system || ("object" === typeof input.system && null !== input.system && false === Array.isArray(input.system) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".system",
-        expected: "(undefined | { bash?: string[] | undefined; git?: string[] | undefined; npm?: string[] | undefined; })",
-        value: input.system
-    }, _errorFactory)) && _ao12(input.system, _path + ".system", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".system",
-        expected: "(undefined | { bash?: string[] | undefined; git?: string[] | undefined; npm?: string[] | undefined; })",
-        value: input.system
-    }, _errorFactory)) && (undefined === input.$schema || "string" === typeof input.$schema || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".$schema",
-        expected: "(string | undefined)",
-        value: input.$schema
-    }, _errorFactory)) && (undefined === input.keymap || ("object" === typeof input.keymap && null !== input.keymap && false === Array.isArray(input.keymap) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".keymap",
-        expected: "(Record<string, string | string[]> | undefined)",
-        value: input.keymap
-    }, _errorFactory)) && _ao13(input.keymap, _path + ".keymap", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".keymap",
-        expected: "(Record<string, string | string[]> | undefined)",
-        value: input.keymap
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "loop", "masking", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao1 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.mode || "fullscreen" === input.mode || "scrollback" === input.mode || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".mode",
-        expected: "(\"fullscreen\" | \"scrollback\" | undefined)",
-        value: input.mode
-    }, _errorFactory)) && (undefined === input.copyOnSelect || "boolean" === typeof input.copyOnSelect || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".copyOnSelect",
-        expected: "(boolean | undefined)",
-        value: input.copyOnSelect
-    }, _errorFactory)) && (undefined === input.collapsedTools || (Array.isArray(input.collapsedTools) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".collapsedTools",
-        expected: "(Array<AnyTool> | undefined)",
-        value: input.collapsedTools
-    }, _errorFactory)) && input.collapsedTools.every((elem: any, _index17: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".collapsedTools[" + _index17 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".collapsedTools",
-        expected: "(Array<AnyTool> | undefined)",
-        value: input.collapsedTools
-    }, _errorFactory)) && (undefined === input.images || "boolean" === typeof input.images || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".images",
-        expected: "(boolean | undefined)",
-        value: input.images
-    }, _errorFactory)) && (undefined === input.listHeight || "number" === typeof input.listHeight || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".listHeight",
-        expected: "(number | undefined)",
-        value: input.listHeight
-    }, _errorFactory)) && (undefined === input.reasoning || "boolean" === typeof input.reasoning || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".reasoning",
-        expected: "(boolean | undefined)",
-        value: input.reasoning
-    }, _errorFactory)) && (undefined === input.theme || "string" === typeof input.theme || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".theme",
-        expected: "(string | undefined)",
-        value: input.theme
-    }, _errorFactory)) && (undefined === input.shiki || true === _av0.has(input.shiki) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".shiki",
-        expected: _ae5,
-        value: input.shiki
-    }, _errorFactory)) && (undefined === input.sessionTree || (Array.isArray(input.sessionTree) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".sessionTree",
-        expected: "(Array<\"assistant\" | \"reasoning\" | \"system\" | \"tools\"> | undefined)",
-        value: input.sessionTree
-    }, _errorFactory)) && input.sessionTree.every((elem: any, _index18: number) => "assistant" === elem || "reasoning" === elem || "system" === elem || "tools" === elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".sessionTree[" + _index18 + "]",
-        expected: "(\"assistant\" | \"reasoning\" | \"system\" | \"tools\")",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".sessionTree",
-        expected: "(Array<\"assistant\" | \"reasoning\" | \"system\" | \"tools\"> | undefined)",
-        value: input.sessionTree
-    }, _errorFactory)) && (undefined === input.transparent || "boolean" === typeof input.transparent || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".transparent",
-        expected: "(boolean | undefined)",
-        value: input.transparent
-    }, _errorFactory)) && (undefined === input.treeHeight || "number" === typeof input.treeHeight || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".treeHeight",
-        expected: "(number | undefined)",
-        value: input.treeHeight
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["mode", "copyOnSelect", "collapsedTools", "images", "listHeight", "reasoning", "theme", "shiki", "sessionTree", "transparent", "treeHeight"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao10 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return ("object" === typeof value && null !== value && false === Array.isArray(value) || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "ResourceFilter",
-            value: value
-        }, _errorFactory)) && _ao11(value, _path + __typia_transform__accessExpressionAsString(key), true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "ResourceFilter",
-            value: value
-        }, _errorFactory);
+// Generated by @zaly/dev. Do not edit.
+// @ts-nocheck
+interface ValidationError {
+  instancePath: string
+  keyword: string
+  message?: string
+  params: Record<string, unknown>
+}
+interface Checker {
+  (input: unknown): boolean
+  errors?: ValidationError[] | null
+}
+const validator: Checker = (() => {
+  const module = { exports: {} as { default: Checker } }
+"use strict";
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+function __accessProp(key) {
+  return this[key];
+}
+var __toCommonJS = (from) => {
+  var entry = (__moduleCache ??= new WeakMap).get(from), desc;
+  if (entry)
+    return entry;
+  entry = __defProp({}, "__esModule", { value: true });
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (var key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(entry, key))
+        __defProp(entry, key, {
+          get: __accessProp.bind(from, key),
+          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+        });
+  }
+  __moduleCache.set(from, entry);
+  return entry;
+};
+var __moduleCache;
+var __returnValue = (v) => v;
+function __exportSetter(name, newValue) {
+  this[name] = __returnValue.bind(null, newValue);
+}
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+      configurable: true,
+      set: __exportSetter.bind(all, name)
     });
-    const _ao11 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".enabled",
-        expected: "(boolean | undefined)",
-        value: input.enabled
-    }, _errorFactory)) && (undefined === input.include || (Array.isArray(input.include) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".include",
-        expected: "(Array<string> | undefined)",
-        value: input.include
-    }, _errorFactory)) && input.include.every((elem: any, _index23: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".include[" + _index23 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".include",
-        expected: "(Array<string> | undefined)",
-        value: input.include
-    }, _errorFactory)) && (undefined === input.exclude || (Array.isArray(input.exclude) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".exclude",
-        expected: "(Array<string> | undefined)",
-        value: input.exclude
-    }, _errorFactory)) && input.exclude.every((elem: any, _index24: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".exclude[" + _index24 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".exclude",
-        expected: "(Array<string> | undefined)",
-        value: input.exclude
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "include", "exclude"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao12 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.bash || (Array.isArray(input.bash) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".bash",
-        expected: "(Array<string> | undefined)",
-        value: input.bash
-    }, _errorFactory)) && input.bash.every((elem: any, _index25: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".bash[" + _index25 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".bash",
-        expected: "(Array<string> | undefined)",
-        value: input.bash
-    }, _errorFactory)) && (undefined === input.git || (Array.isArray(input.git) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".git",
-        expected: "(Array<string> | undefined)",
-        value: input.git
-    }, _errorFactory)) && input.git.every((elem: any, _index26: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".git[" + _index26 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".git",
-        expected: "(Array<string> | undefined)",
-        value: input.git
-    }, _errorFactory)) && (undefined === input.npm || (Array.isArray(input.npm) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".npm",
-        expected: "(Array<string> | undefined)",
-        value: input.npm
-    }, _errorFactory)) && input.npm.every((elem: any, _index27: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".npm[" + _index27 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".npm",
-        expected: "(Array<string> | undefined)",
-        value: input.npm
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["bash", "git", "npm"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao13 = (input: any, _path: string, _exceptionable: boolean = true): boolean => false === _exceptionable || Object.keys(input).every((key: any) => {
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return (null !== value || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "(Array<string> | string)",
-            value: value
-        }, _errorFactory)) && (undefined !== value || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "(Array<string> | string)",
-            value: value
-        }, _errorFactory)) && ("string" === typeof value || (Array.isArray(value) || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "(Array<string> | string)",
-            value: value
-        }, _errorFactory)) && value.every((elem: any, _index28: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key) + "[" + _index28 + "]",
-            expected: "string",
-            value: elem
-        }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + __typia_transform__accessExpressionAsString(key),
-            expected: "(Array<string> | string)",
-            value: value
-        }, _errorFactory));
-    });
-    const _ao2 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".enabled",
-        expected: "(boolean | undefined)",
-        value: input.enabled
-    }, _errorFactory)) && (undefined === input.actions || "boolean" === typeof input.actions || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".actions",
-        expected: "(boolean | undefined)",
-        value: input.actions
-    }, _errorFactory)) && (undefined === input.actionPrefix || "string" === typeof input.actionPrefix || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".actionPrefix",
-        expected: "(string | undefined)",
-        value: input.actionPrefix
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "actions", "actionPrefix"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao3 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.actionPrefix || "string" === typeof input.actionPrefix || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".actionPrefix",
-        expected: "(string | undefined)",
-        value: input.actionPrefix
-    }, _errorFactory)) && (undefined === input.bash || "boolean" === typeof input.bash || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".bash",
-        expected: "(boolean | undefined)",
-        value: input.bash
-    }, _errorFactory)) && (undefined === input.expr || "boolean" === typeof input.expr || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".expr",
-        expected: "(boolean | undefined)",
-        value: input.expr
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["actionPrefix", "bash", "expr"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao4 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".enabled",
-        expected: "(boolean | undefined)",
-        value: input.enabled
-    }, _errorFactory)) && (undefined === input.keepTokens || "number" === typeof input.keepTokens || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".keepTokens",
-        expected: "(number | undefined)",
-        value: input.keepTokens
-    }, _errorFactory)) && (undefined === input.reasoning || "high" === input.reasoning || "low" === input.reasoning || "max" === input.reasoning || "medium" === input.reasoning || "minimal" === input.reasoning || "off" === input.reasoning || "xhigh" === input.reasoning || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".reasoning",
-        expected: "(\"high\" | \"low\" | \"max\" | \"medium\" | \"minimal\" | \"off\" | \"xhigh\" | undefined)",
-        value: input.reasoning
-    }, _errorFactory)) && (undefined === input.summaryTokens || "number" === typeof input.summaryTokens || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".summaryTokens",
-        expected: "(number | undefined)",
-        value: input.summaryTokens
-    }, _errorFactory)) && (undefined === input.threshold || "number" === typeof input.threshold || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".threshold",
-        expected: "(number | undefined)",
-        value: input.threshold
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "keepTokens", "reasoning", "summaryTokens", "threshold"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao5 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".enabled",
-        expected: "(boolean | undefined)",
-        value: input.enabled
-    }, _errorFactory)) && (undefined === input.autoStart || "boolean" === typeof input.autoStart || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".autoStart",
-        expected: "(boolean | undefined)",
-        value: input.autoStart
-    }, _errorFactory)) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "supervisor" === input.profile || "watch" === input.profile || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".profile",
-        expected: "(\"autonomous\" | \"ci\" | \"interactive\" | \"supervisor\" | \"watch\" | undefined)",
-        value: input.profile
-    }, _errorFactory)) && (undefined === input.goal || "string" === typeof input.goal || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".goal",
-        expected: "(string | undefined)",
-        value: input.goal
-    }, _errorFactory)) && (undefined === input.maxTurns || "number" === typeof input.maxTurns || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxTurns",
-        expected: "(number | undefined)",
-        value: input.maxTurns
-    }, _errorFactory)) && (undefined === input.maxWallTimeMs || "number" === typeof input.maxWallTimeMs || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxWallTimeMs",
-        expected: "(number | undefined)",
-        value: input.maxWallTimeMs
-    }, _errorFactory)) && (undefined === input.maxCostUsd || "number" === typeof input.maxCostUsd || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxCostUsd",
-        expected: "(number | undefined)",
-        value: input.maxCostUsd
-    }, _errorFactory)) && (undefined === input.maxNoProgressTurns || "number" === typeof input.maxNoProgressTurns || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxNoProgressTurns",
-        expected: "(number | undefined)",
-        value: input.maxNoProgressTurns
-    }, _errorFactory)) && (undefined === input.maxParallel || "number" === typeof input.maxParallel || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxParallel",
-        expected: "(number | undefined)",
-        value: input.maxParallel
-    }, _errorFactory)) && (undefined === input.onNoProgress || "ask" === input.onNoProgress || "reflect" === input.onNoProgress || "stop" === input.onNoProgress || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".onNoProgress",
-        expected: "(\"ask\" | \"reflect\" | \"stop\" | undefined)",
-        value: input.onNoProgress
-    }, _errorFactory)) && (undefined === input.heartbeatMs || "number" === typeof input.heartbeatMs || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".heartbeatMs",
-        expected: "(number | undefined)",
-        value: input.heartbeatMs
-    }, _errorFactory)) && (undefined === input.watch || ("object" === typeof input.watch && null !== input.watch || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".watch",
-        expected: "(undefined | { everyMs: number; maxAttempts?: number | undefined; hint?: string | undefined; })",
-        value: input.watch
-    }, _errorFactory)) && _ao6(input.watch, _path + ".watch", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".watch",
-        expected: "(undefined | { everyMs: number; maxAttempts?: number | undefined; hint?: string | undefined; })",
-        value: input.watch
-    }, _errorFactory)) && (undefined === input.verify || ("object" === typeof input.verify && null !== input.verify || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".verify",
-        expected: "(undefined | { command: string[]; cwd?: string | undefined; timeoutMs?: number | undefined; })",
-        value: input.verify
-    }, _errorFactory)) && _ao7(input.verify, _path + ".verify", true && _exceptionable) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".verify",
-        expected: "(undefined | { command: string[]; cwd?: string | undefined; timeoutMs?: number | undefined; })",
-        value: input.verify
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "autoStart", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "maxParallel", "onNoProgress", "heartbeatMs", "watch", "verify"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao6 = (input: any, _path: string, _exceptionable: boolean = true): boolean => ("number" === typeof input.everyMs || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".everyMs",
-        expected: "number",
-        value: input.everyMs
-    }, _errorFactory)) && (undefined === input.maxAttempts || "number" === typeof input.maxAttempts || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".maxAttempts",
-        expected: "(number | undefined)",
-        value: input.maxAttempts
-    }, _errorFactory)) && (undefined === input.hint || "string" === typeof input.hint || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".hint",
-        expected: "(string | undefined)",
-        value: input.hint
-    }, _errorFactory)) && (1 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["everyMs", "maxAttempts", "hint"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao7 = (input: any, _path: string, _exceptionable: boolean = true): boolean => ((Array.isArray(input.command) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".command",
-        expected: "Array<string>",
-        value: input.command
-    }, _errorFactory)) && input.command.every((elem: any, _index19: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".command[" + _index19 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".command",
-        expected: "Array<string>",
-        value: input.command
-    }, _errorFactory)) && (undefined === input.cwd || "string" === typeof input.cwd || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".cwd",
-        expected: "(string | undefined)",
-        value: input.cwd
-    }, _errorFactory)) && (undefined === input.timeoutMs || "number" === typeof input.timeoutMs || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".timeoutMs",
-        expected: "(number | undefined)",
-        value: input.timeoutMs
-    }, _errorFactory)) && (1 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["command", "cwd", "timeoutMs"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao8 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".enabled",
-        expected: "(boolean | undefined)",
-        value: input.enabled
-    }, _errorFactory)) && (undefined === input.minTokens || "number" === typeof input.minTokens || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".minTokens",
-        expected: "(number | undefined)",
-        value: input.minTokens
-    }, _errorFactory)) && (undefined === input.keepTurns || "number" === typeof input.keepTurns || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".keepTurns",
-        expected: "(number | undefined)",
-        value: input.keepTurns
-    }, _errorFactory)) && (undefined === input.delta || "number" === typeof input.delta || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".delta",
-        expected: "(number | undefined)",
-        value: input.delta
-    }, _errorFactory)) && (undefined === input.target || "number" === typeof input.target || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".target",
-        expected: "(number | undefined)",
-        value: input.target
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["enabled", "minTokens", "keepTurns", "delta", "target"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _ao9 = (input: any, _path: string, _exceptionable: boolean = true): boolean => (undefined === input.preset || "permissive" === input.preset || "readonly" === input.preset || "strict" === input.preset || "yolo" === input.preset || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".preset",
-        expected: "(\"permissive\" | \"readonly\" | \"strict\" | \"yolo\" | undefined)",
-        value: input.preset
-    }, _errorFactory)) && (undefined === input.allow || (Array.isArray(input.allow) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".allow",
-        expected: "(Array<string> | undefined)",
-        value: input.allow
-    }, _errorFactory)) && input.allow.every((elem: any, _index20: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".allow[" + _index20 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".allow",
-        expected: "(Array<string> | undefined)",
-        value: input.allow
-    }, _errorFactory)) && (undefined === input.deny || (Array.isArray(input.deny) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".deny",
-        expected: "(Array<string> | undefined)",
-        value: input.deny
-    }, _errorFactory)) && input.deny.every((elem: any, _index21: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".deny[" + _index21 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".deny",
-        expected: "(Array<string> | undefined)",
-        value: input.deny
-    }, _errorFactory)) && (undefined === input.ask || (Array.isArray(input.ask) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".ask",
-        expected: "(Array<string> | undefined)",
-        value: input.ask
-    }, _errorFactory)) && input.ask.every((elem: any, _index22: number) => "string" === typeof elem || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".ask[" + _index22 + "]",
-        expected: "string",
-        value: elem
-    }, _errorFactory)) || _assertGuard_1._assertGuard(_exceptionable, {
-        method: "typia.createAssertEquals",
-        path: _path + ".ask",
-        expected: "(Array<string> | undefined)",
-        value: input.ask
-    }, _errorFactory)) && (0 === Object.keys(input).length || (false === _exceptionable || Object.keys(input).every((key: any) => {
-        if (["preset", "allow", "deny", "ask"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return _assertGuard_1._assertGuard(_exceptionable, {
-            method: "typia.createAssertEquals",
-            path: _path + _accessExpressionAsString_1._accessExpressionAsString(key),
-            expected: "undefined",
-            value: value
-        }, _errorFactory);
-    })));
-    const _io0 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.model || "string" === typeof input.model) && (undefined === input.reasoning || "high" === input.reasoning || "low" === input.reasoning || "max" === input.reasoning || "medium" === input.reasoning || "minimal" === input.reasoning || "off" === input.reasoning || "xhigh" === input.reasoning) && (undefined === input.tools || Array.isArray(input.tools) && input.tools.every((elem: any, _index1: number) => "string" === typeof elem)) && (undefined === input.ui || "object" === typeof input.ui && null !== input.ui && false === Array.isArray(input.ui) && _io1(input.ui, true && _exceptionable)) && (undefined === input.skills || "object" === typeof input.skills && null !== input.skills && false === Array.isArray(input.skills) && _io2(input.skills, true && _exceptionable)) && (undefined === input.commands || "object" === typeof input.commands && null !== input.commands && false === Array.isArray(input.commands) && _io3(input.commands, true && _exceptionable)) && (undefined === input.compaction || "object" === typeof input.compaction && null !== input.compaction && false === Array.isArray(input.compaction) && _io4(input.compaction, true && _exceptionable)) && (undefined === input.loop || "object" === typeof input.loop && null !== input.loop && false === Array.isArray(input.loop) && _io5(input.loop, true && _exceptionable)) && (undefined === input.masking || "object" === typeof input.masking && null !== input.masking && false === Array.isArray(input.masking) && _io8(input.masking, true && _exceptionable)) && (undefined === input.permissions || "object" === typeof input.permissions && null !== input.permissions && false === Array.isArray(input.permissions) && _io9(input.permissions, true && _exceptionable)) && (undefined === input.plugins || Array.isArray(input.plugins) && input.plugins.every((elem: any, _index2: number) => "string" === typeof elem)) && (undefined === input.resources || "object" === typeof input.resources && null !== input.resources && false === Array.isArray(input.resources) && _io10(input.resources, true && _exceptionable)) && (undefined === input.system || "object" === typeof input.system && null !== input.system && false === Array.isArray(input.system) && _io12(input.system, true && _exceptionable)) && (undefined === input.$schema || "string" === typeof input.$schema) && (undefined === input.keymap || "object" === typeof input.keymap && null !== input.keymap && false === Array.isArray(input.keymap) && _io13(input.keymap, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["model", "reasoning", "tools", "ui", "skills", "commands", "compaction", "loop", "masking", "permissions", "plugins", "resources", "system", "$schema", "keymap"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io1 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.mode || "fullscreen" === input.mode || "scrollback" === input.mode) && (undefined === input.copyOnSelect || "boolean" === typeof input.copyOnSelect) && (undefined === input.collapsedTools || Array.isArray(input.collapsedTools) && input.collapsedTools.every((elem: any, _index3: number) => "string" === typeof elem)) && (undefined === input.images || "boolean" === typeof input.images) && (undefined === input.listHeight || "number" === typeof input.listHeight) && (undefined === input.reasoning || "boolean" === typeof input.reasoning) && (undefined === input.theme || "string" === typeof input.theme) && (undefined === input.shiki || true === _iv0.has(input.shiki)) && (undefined === input.sessionTree || Array.isArray(input.sessionTree) && input.sessionTree.every((elem: any, _index4: number) => "assistant" === elem || "reasoning" === elem || "system" === elem || "tools" === elem)) && (undefined === input.transparent || "boolean" === typeof input.transparent) && (undefined === input.treeHeight || "number" === typeof input.treeHeight) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["mode", "copyOnSelect", "collapsedTools", "images", "listHeight", "reasoning", "theme", "shiki", "sessionTree", "transparent", "treeHeight"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io10 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return "object" === typeof value && null !== value && false === Array.isArray(value) && _io11(value, true && _exceptionable);
-    });
-    const _io11 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.include || Array.isArray(input.include) && input.include.every((elem: any, _index9: number) => "string" === typeof elem)) && (undefined === input.exclude || Array.isArray(input.exclude) && input.exclude.every((elem: any, _index10: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "include", "exclude"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io12 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.bash || Array.isArray(input.bash) && input.bash.every((elem: any, _index11: number) => "string" === typeof elem)) && (undefined === input.git || Array.isArray(input.git) && input.git.every((elem: any, _index12: number) => "string" === typeof elem)) && (undefined === input.npm || Array.isArray(input.npm) && input.npm.every((elem: any, _index13: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["bash", "git", "npm"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io13 = (input: any, _exceptionable: boolean = true): boolean => Object.keys(input).every((key: any) => {
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return null !== value && undefined !== value && ("string" === typeof value || Array.isArray(value) && value.every((elem: any, _index14: number) => "string" === typeof elem));
-    });
-    const _io2 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.actions || "boolean" === typeof input.actions) && (undefined === input.actionPrefix || "string" === typeof input.actionPrefix) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "actions", "actionPrefix"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io3 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.actionPrefix || "string" === typeof input.actionPrefix) && (undefined === input.bash || "boolean" === typeof input.bash) && (undefined === input.expr || "boolean" === typeof input.expr) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["actionPrefix", "bash", "expr"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io4 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.keepTokens || "number" === typeof input.keepTokens) && (undefined === input.reasoning || "high" === input.reasoning || "low" === input.reasoning || "max" === input.reasoning || "medium" === input.reasoning || "minimal" === input.reasoning || "off" === input.reasoning || "xhigh" === input.reasoning) && (undefined === input.summaryTokens || "number" === typeof input.summaryTokens) && (undefined === input.threshold || "number" === typeof input.threshold) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "keepTokens", "reasoning", "summaryTokens", "threshold"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io5 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.autoStart || "boolean" === typeof input.autoStart) && (undefined === input.profile || "autonomous" === input.profile || "ci" === input.profile || "interactive" === input.profile || "supervisor" === input.profile || "watch" === input.profile) && (undefined === input.goal || "string" === typeof input.goal) && (undefined === input.maxTurns || "number" === typeof input.maxTurns) && (undefined === input.maxWallTimeMs || "number" === typeof input.maxWallTimeMs) && (undefined === input.maxCostUsd || "number" === typeof input.maxCostUsd) && (undefined === input.maxNoProgressTurns || "number" === typeof input.maxNoProgressTurns) && (undefined === input.maxParallel || "number" === typeof input.maxParallel) && (undefined === input.onNoProgress || "ask" === input.onNoProgress || "reflect" === input.onNoProgress || "stop" === input.onNoProgress) && (undefined === input.heartbeatMs || "number" === typeof input.heartbeatMs) && (undefined === input.watch || "object" === typeof input.watch && null !== input.watch && _io6(input.watch, true && _exceptionable)) && (undefined === input.verify || "object" === typeof input.verify && null !== input.verify && _io7(input.verify, true && _exceptionable)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "autoStart", "profile", "goal", "maxTurns", "maxWallTimeMs", "maxCostUsd", "maxNoProgressTurns", "maxParallel", "onNoProgress", "heartbeatMs", "watch", "verify"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io6 = (input: any, _exceptionable: boolean = true): boolean => "number" === typeof input.everyMs && (undefined === input.maxAttempts || "number" === typeof input.maxAttempts) && (undefined === input.hint || "string" === typeof input.hint) && (1 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["everyMs", "maxAttempts", "hint"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io7 = (input: any, _exceptionable: boolean = true): boolean => Array.isArray(input.command) && input.command.every((elem: any, _index5: number) => "string" === typeof elem) && (undefined === input.cwd || "string" === typeof input.cwd) && (undefined === input.timeoutMs || "number" === typeof input.timeoutMs) && (1 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["command", "cwd", "timeoutMs"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io8 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.enabled || "boolean" === typeof input.enabled) && (undefined === input.minTokens || "number" === typeof input.minTokens) && (undefined === input.keepTurns || "number" === typeof input.keepTurns) && (undefined === input.delta || "number" === typeof input.delta) && (undefined === input.target || "number" === typeof input.target) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["enabled", "minTokens", "keepTurns", "delta", "target"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const _io9 = (input: any, _exceptionable: boolean = true): boolean => (undefined === input.preset || "permissive" === input.preset || "readonly" === input.preset || "strict" === input.preset || "yolo" === input.preset) && (undefined === input.allow || Array.isArray(input.allow) && input.allow.every((elem: any, _index6: number) => "string" === typeof elem)) && (undefined === input.deny || Array.isArray(input.deny) && input.deny.every((elem: any, _index7: number) => "string" === typeof elem)) && (undefined === input.ask || Array.isArray(input.ask) && input.ask.every((elem: any, _index8: number) => "string" === typeof elem)) && (0 === Object.keys(input).length || Object.keys(input).every((key: any) => {
-        if (["preset", "allow", "deny", "ask"].some((prop: any) => key === prop))
-            return true;
-        const value = input[key];
-        if (undefined === value)
-            return true;
-        return false;
-    }));
-    const __is = (input: any, _exceptionable: boolean = true): input is TypiaConfig => "object" === typeof input && null !== input && false === Array.isArray(input) && _io0(input, true);
-    let _errorFactory: any;
-    return (input: any, errorFactory?: (p: import("typia").TypeGuardError.IProps) => Error): TypiaConfig => {
-        if (false === __is(input)) {
-            _errorFactory = errorFactory;
-            ((input: any, _path: string, _exceptionable: boolean = true) => ("object" === typeof input && null !== input && false === Array.isArray(input) || _assertGuard_1._assertGuard(true, {
-                method: "typia.createAssertEquals",
-                path: _path + "",
-                expected: "TypiaConfig",
-                value: input
-            }, _errorFactory)) && _ao0(input, _path + "", true) || _assertGuard_1._assertGuard(true, {
-                method: "typia.createAssertEquals",
-                path: _path + "",
-                expected: "TypiaConfig",
-                value: input
-            }, _errorFactory))(input, "$input", true);
-        }
-        return input;
-    };
-})();
-export function validateConfig(input: unknown): Config {
-    const ret = validator(input);
-    const keymap: Record<string, KeyPatterns> = {};
-    for (const [action, pattern] of Object.entries(ret.keymap ?? {})) {
-        if (typeof pattern === "string")
-            keymap[action] = canonical(pattern);
-        else if (Array.isArray(pattern))
-            keymap[action] = pattern.map(canonical);
-        else
-            throw new TypeError(`invalid key pattern for action ${action}`);
+};
+
+// validator:validator.mjs
+var exports_validator = {};
+__export(exports_validator, {
+  default: () => validator_default,
+  validate: () => validate
+});
+module.exports = __toCommonJS(exports_validator);
+var validate = validate21;
+var validator_default = validate21;
+var schema6 = { $schema: "http://json-schema.org/draft-07/schema#", additionalProperties: false, definitions: { "AnyKey<BuiltinTool>": { anyOf: [{ $ref: "#/definitions/BuiltinTool" }, { type: "string" }] }, AnyTool: { $ref: "#/definitions/AnyKey%3CBuiltinTool%3E" }, BuiltinTool: { enum: ["agent_send", "agent_spawn", "bash", "edit", "fetch", "find", "grep", "loop", "question", "read", "search", "subagent", "task_list", "task_poll", "task_stop", "wakeup", "write"], type: "string" }, LoopNoProgressAction: { enum: ["reflect", "ask", "stop"], type: "string" }, LoopProfile: { enum: ["interactive", "autonomous", "ci", "watch", "supervisor"], type: "string" }, PermissionPresetName: { description: 'Permission presets — verdict-keyed pattern lists in the same shape `parseRules` accepts. The TUI exposes these as `--preset strict`, `--preset readonly`, etc.; the manager resolves the chosen preset to the structured `Rule<string>[]` at construction.\n\nPattern grammar:   "bash(ls:*)"     → bash command pattern   "read(/src/**)"  → workspace-relative gitignore pattern   "read(*)"        → matches every read in any workspace   "bash"           → bare scope, equivalent to `bash(*)` (match any cmd)\n\nScope names are exact matches against the tool name they gate (snake_case). Underscored scopes work too (`task_stop`, `task_poll`).', enum: ["strict", "readonly", "permissive", "yolo"], type: "string" }, ReasoningEffort: { enum: ["off", "minimal", "low", "medium", "high", "xhigh", "max"], type: "string" }, ResourceFilter: { additionalProperties: false, properties: { enabled: { description: "Whether the plugin is enabled. Defaults to true.", type: "boolean" }, exclude: { description: 'When set, exclude the resources, matching these paths/globs from the plugin. Add a resource type to the exclude list to disable that resource type. For example, `["skills"]` will disable all skills from the plugin. Exclude is applied after include.', items: { type: "string" }, type: "array" }, include: { description: "When set, only include the resources, matching these paths/globs from the plugin.", items: { type: "string" }, type: "array" } }, type: "object" }, ShikiSelection: { anyOf: [{ const: "auto", type: "string" }, { $ref: "#/definitions/ShikiTheme" }] }, ShikiTheme: { enum: ["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"], type: "string" } }, properties: { $schema: { type: "string" }, commands: { additionalProperties: false, properties: { actionPrefix: { description: "Prefix for command actions. Defaults to ``", type: "string" }, bash: { description: "Allow bash execution in commands. Defaults to true.", type: "boolean" }, expr: { description: "Allow js expressions in command templates. Defaults to true.", type: "boolean" } }, type: "object" }, compaction: { additionalProperties: false, properties: { enabled: { description: "Enable automatic compaction when context is full", type: "boolean" }, keepTokens: { description: "Existing messages up to this many tokens will be preserved in the context", type: "number" }, reasoning: { $ref: "#/definitions/ReasoningEffort", description: "Reasoning effort for the compaction summary" }, summaryTokens: { description: "Maximum number of tokens to use for the generated summary", type: "number" }, threshold: { description: "Threshold for automatic compaction.", type: "number" } }, type: "object" }, keymap: { additionalProperties: { anyOf: [{ type: "string" }, { items: { type: "string" }, type: "array" }] }, type: "object" }, loop: { additionalProperties: false, properties: { autoStart: { description: "Start the loop automatically when the TUI becomes ready.", type: "boolean" }, enabled: { description: "Enable LoopAgent behaviour even without a goal.", type: "boolean" }, goal: { type: "string" }, heartbeatMs: { type: "number" }, maxCostUsd: { type: "number" }, maxNoProgressTurns: { type: "number" }, maxParallel: { type: "number" }, maxTurns: { type: "number" }, maxWallTimeMs: { type: "number" }, onNoProgress: { $ref: "#/definitions/LoopNoProgressAction" }, profile: { $ref: "#/definitions/LoopProfile" }, verify: { additionalProperties: false, properties: { command: { items: { type: "string" }, type: "array" }, cwd: { type: "string" }, timeoutMs: { type: "number" } }, required: ["command"], type: "object" }, watch: { additionalProperties: false, properties: { everyMs: { type: "number" }, hint: { type: "string" }, maxAttempts: { type: "number" } }, required: ["everyMs"], type: "object" } }, type: "object" }, masking: { additionalProperties: false, properties: { delta: { description: "How far above the target ratio to trigger a new masking pass. Defaults to 0.25 (25%).", type: "number" }, enabled: { description: "Whether to enable masking. Defaults to true.", type: "boolean" }, keepTurns: { description: "How many turns to keep in the tail of the conversation, regardless of score. Defaults to 20.", type: "number" }, minTokens: { description: `Don't mask tool-result parts whose original content is shorter than this (estimated tokens). Skips tiny "ok"-style success messages where the stub would be larger than the original. Doesn't apply to attachments (always worth masking).`, type: "number" }, target: { description: "Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%).", type: "number" } }, type: "object" }, model: { description: "Default model to use for the agent.", type: "string" }, permissions: { additionalProperties: false, properties: { allow: { items: { type: "string" }, type: "array" }, ask: { items: { type: "string" }, type: "array" }, deny: { items: { type: "string" }, type: "array" }, preset: { $ref: "#/definitions/PermissionPresetName", description: 'Permissions preset to use. Defaults to "permissive".' } }, type: "object" }, plugins: { items: { type: "string" }, type: "array" }, reasoning: { $ref: "#/definitions/ReasoningEffort", description: "Default reasoning effort." }, resources: { additionalProperties: { $ref: "#/definitions/ResourceFilter" }, description: "Resource configuration for zaly.", type: "object" }, skills: { additionalProperties: false, properties: { actionPrefix: { description: "Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`", type: "string" }, actions: { description: "Show skill actions. Defaults to true.", type: "boolean" }, enabled: { description: "Allow skills to be used by the agent. Defaults to true.", type: "boolean" } }, type: "object" }, system: { additionalProperties: false, properties: { bash: { description: "Command used by the bash tool.", items: { type: "string" }, type: "array" }, git: { description: "Command used for git packs.", items: { type: "string" }, type: "array" }, npm: { description: "Package manager command used for npm packs.", items: { type: "string" }, type: "array" } }, type: "object" }, tools: { items: { type: "string" }, type: "array" }, ui: { additionalProperties: false, properties: { collapsedTools: { description: "Tools whose result body should be hidden in the UI.", items: { $ref: "#/definitions/AnyTool" }, type: "array" }, copyOnSelect: { type: "boolean" }, images: { description: "Render images, if supported by the terminal", type: "boolean" }, listHeight: { description: "Maximum number of visible rows in selection lists, like pickers and autocomplete.", type: "number" }, mode: { description: "Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.", enum: ["scrollback", "fullscreen"], type: "string" }, reasoning: { description: "Whether to show the reasoning trace in the UI.", type: "boolean" }, sessionTree: { description: "What messages to show in the session tree. Defaults to assistant, reasoning, and tools.", items: { enum: ["assistant", "reasoning", "tools", "system"], type: "string" }, type: "array" }, shiki: { $ref: "#/definitions/ShikiSelection", description: "Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it." }, theme: { description: "Theme name or path to custom theme file", type: "string" }, transparent: { description: "Make the background transparent. Defaults to false.", type: "boolean" }, treeHeight: { description: "Maximum number of visible rows in the session tree.", type: "number" } }, type: "object" } }, type: "object" };
+var func2 = Object.prototype.hasOwnProperty;
+var schema7 = { enum: ["off", "minimal", "low", "medium", "high", "xhigh", "max"], type: "string" };
+function validate22(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
     }
-    return { ...ret, keymap };
+    errors++;
+  }
+  if (!(data === "off" || data === "minimal" || data === "low" || data === "medium" || data === "high" || data === "xhigh" || data === "max")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema7.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate22.errors = vErrors;
+  return errors === 0;
+}
+var schema8 = { enum: ["reflect", "ask", "stop"], type: "string" };
+function validate24(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "reflect" || data === "ask" || data === "stop")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema8.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate24.errors = vErrors;
+  return errors === 0;
+}
+var schema9 = { enum: ["interactive", "autonomous", "ci", "watch", "supervisor"], type: "string" };
+function validate26(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "interactive" || data === "autonomous" || data === "ci" || data === "watch" || data === "supervisor")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema9.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate26.errors = vErrors;
+  return errors === 0;
+}
+var schema10 = { description: 'Permission presets — verdict-keyed pattern lists in the same shape `parseRules` accepts. The TUI exposes these as `--preset strict`, `--preset readonly`, etc.; the manager resolves the chosen preset to the structured `Rule<string>[]` at construction.\n\nPattern grammar:   "bash(ls:*)"     → bash command pattern   "read(/src/**)"  → workspace-relative gitignore pattern   "read(*)"        → matches every read in any workspace   "bash"           → bare scope, equivalent to `bash(*)` (match any cmd)\n\nScope names are exact matches against the tool name they gate (snake_case). Underscored scopes work too (`task_stop`, `task_poll`).', enum: ["strict", "readonly", "permissive", "yolo"], type: "string" };
+function validate28(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "strict" || data === "readonly" || data === "permissive" || data === "yolo")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema10.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate28.errors = vErrors;
+  return errors === 0;
+}
+function validate31(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (data && typeof data == "object" && !Array.isArray(data)) {
+    for (const key0 in data) {
+      if (!(key0 === "enabled" || key0 === "exclude" || key0 === "include")) {
+        const err0 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
+        if (vErrors === null) {
+          vErrors = [err0];
+        } else {
+          vErrors.push(err0);
+        }
+        errors++;
+      }
+    }
+    if (data.enabled !== undefined) {
+      if (typeof data.enabled !== "boolean") {
+        const err1 = { instancePath: instancePath + "/enabled", schemaPath: "#/properties/enabled/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+        if (vErrors === null) {
+          vErrors = [err1];
+        } else {
+          vErrors.push(err1);
+        }
+        errors++;
+      }
+    }
+    if (data.exclude !== undefined) {
+      let data1 = data.exclude;
+      if (Array.isArray(data1)) {
+        const len0 = data1.length;
+        for (let i0 = 0;i0 < len0; i0++) {
+          if (typeof data1[i0] !== "string") {
+            const err2 = { instancePath: instancePath + "/exclude/" + i0, schemaPath: "#/properties/exclude/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err2];
+            } else {
+              vErrors.push(err2);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err3 = { instancePath: instancePath + "/exclude", schemaPath: "#/properties/exclude/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err3];
+        } else {
+          vErrors.push(err3);
+        }
+        errors++;
+      }
+    }
+    if (data.include !== undefined) {
+      let data3 = data.include;
+      if (Array.isArray(data3)) {
+        const len1 = data3.length;
+        for (let i1 = 0;i1 < len1; i1++) {
+          if (typeof data3[i1] !== "string") {
+            const err4 = { instancePath: instancePath + "/include/" + i1, schemaPath: "#/properties/include/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err4];
+            } else {
+              vErrors.push(err4);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err5 = { instancePath: instancePath + "/include", schemaPath: "#/properties/include/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err5];
+        } else {
+          vErrors.push(err5);
+        }
+        errors++;
+      }
+    }
+  } else {
+    const err6 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    if (vErrors === null) {
+      vErrors = [err6];
+    } else {
+      vErrors.push(err6);
+    }
+    errors++;
+  }
+  validate31.errors = vErrors;
+  return errors === 0;
+}
+var schema13 = { enum: ["agent_send", "agent_spawn", "bash", "edit", "fetch", "find", "grep", "loop", "question", "read", "search", "subagent", "task_list", "task_poll", "task_stop", "wakeup", "write"], type: "string" };
+function validate34(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "agent_send" || data === "agent_spawn" || data === "bash" || data === "edit" || data === "fetch" || data === "find" || data === "grep" || data === "loop" || data === "question" || data === "read" || data === "search" || data === "subagent" || data === "task_list" || data === "task_poll" || data === "task_stop" || data === "wakeup" || data === "write")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema13.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate34.errors = vErrors;
+  return errors === 0;
+}
+function validate33(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  const _errs0 = errors;
+  let valid0 = false;
+  const _errs1 = errors;
+  if (!validate34(data, { instancePath, parentData, parentDataProperty, rootData })) {
+    vErrors = vErrors === null ? validate34.errors : vErrors.concat(validate34.errors);
+    errors = vErrors.length;
+  }
+  var _valid0 = _errs1 === errors;
+  valid0 = valid0 || _valid0;
+  if (!valid0) {
+    const _errs2 = errors;
+    if (typeof data !== "string") {
+      const err0 = { instancePath, schemaPath: "#/anyOf/1/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+      if (vErrors === null) {
+        vErrors = [err0];
+      } else {
+        vErrors.push(err0);
+      }
+      errors++;
+    }
+    var _valid0 = _errs2 === errors;
+    valid0 = valid0 || _valid0;
+  }
+  if (!valid0) {
+    const err1 = { instancePath, schemaPath: "#/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  } else {
+    errors = _errs0;
+    if (vErrors !== null) {
+      if (_errs0) {
+        vErrors.length = _errs0;
+      } else {
+        vErrors = null;
+      }
+    }
+  }
+  validate33.errors = vErrors;
+  return errors === 0;
+}
+var schema15 = { enum: ["andromeeda", "aurora-x", "ayu-dark", "ayu-light", "ayu-mirage", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "dark-plus", "dracula", "dracula-soft", "everforest-dark", "everforest-light", "github-dark", "github-dark-default", "github-dark-dimmed", "github-dark-high-contrast", "github-light", "github-light-default", "github-light-high-contrast", "gruvbox-dark-hard", "gruvbox-dark-medium", "gruvbox-dark-soft", "gruvbox-light-hard", "gruvbox-light-medium", "gruvbox-light-soft", "horizon", "horizon-bright", "houston", "kanagawa-dragon", "kanagawa-lotus", "kanagawa-wave", "laserwave", "light-plus", "material-theme", "material-theme-darker", "material-theme-lighter", "material-theme-ocean", "material-theme-palenight", "min-dark", "min-light", "monokai", "night-owl", "night-owl-light", "nord", "one-dark-pro", "one-light", "plastic", "poimandres", "red", "rose-pine", "rose-pine-dawn", "rose-pine-moon", "slack-dark", "slack-ochin", "snazzy-light", "solarized-dark", "solarized-light", "synthwave-84", "tokyo-night", "vesper", "vitesse-black", "vitesse-dark", "vitesse-light"], type: "string" };
+function validate38(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (!(data === "andromeeda" || data === "aurora-x" || data === "ayu-dark" || data === "ayu-light" || data === "ayu-mirage" || data === "catppuccin-frappe" || data === "catppuccin-latte" || data === "catppuccin-macchiato" || data === "catppuccin-mocha" || data === "dark-plus" || data === "dracula" || data === "dracula-soft" || data === "everforest-dark" || data === "everforest-light" || data === "github-dark" || data === "github-dark-default" || data === "github-dark-dimmed" || data === "github-dark-high-contrast" || data === "github-light" || data === "github-light-default" || data === "github-light-high-contrast" || data === "gruvbox-dark-hard" || data === "gruvbox-dark-medium" || data === "gruvbox-dark-soft" || data === "gruvbox-light-hard" || data === "gruvbox-light-medium" || data === "gruvbox-light-soft" || data === "horizon" || data === "horizon-bright" || data === "houston" || data === "kanagawa-dragon" || data === "kanagawa-lotus" || data === "kanagawa-wave" || data === "laserwave" || data === "light-plus" || data === "material-theme" || data === "material-theme-darker" || data === "material-theme-lighter" || data === "material-theme-ocean" || data === "material-theme-palenight" || data === "min-dark" || data === "min-light" || data === "monokai" || data === "night-owl" || data === "night-owl-light" || data === "nord" || data === "one-dark-pro" || data === "one-light" || data === "plastic" || data === "poimandres" || data === "red" || data === "rose-pine" || data === "rose-pine-dawn" || data === "rose-pine-moon" || data === "slack-dark" || data === "slack-ochin" || data === "snazzy-light" || data === "solarized-dark" || data === "solarized-light" || data === "synthwave-84" || data === "tokyo-night" || data === "vesper" || data === "vitesse-black" || data === "vitesse-dark" || data === "vitesse-light")) {
+    const err1 = { instancePath, schemaPath: "#/enum", keyword: "enum", params: { allowedValues: schema15.enum }, message: "must be equal to one of the allowed values" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  validate38.errors = vErrors;
+  return errors === 0;
+}
+function validate37(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  const _errs0 = errors;
+  let valid0 = false;
+  const _errs1 = errors;
+  if (typeof data !== "string") {
+    const err0 = { instancePath, schemaPath: "#/anyOf/0/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+    if (vErrors === null) {
+      vErrors = [err0];
+    } else {
+      vErrors.push(err0);
+    }
+    errors++;
+  }
+  if (data !== "auto") {
+    const err1 = { instancePath, schemaPath: "#/anyOf/0/const", keyword: "const", params: { allowedValue: "auto" }, message: "must be equal to constant" };
+    if (vErrors === null) {
+      vErrors = [err1];
+    } else {
+      vErrors.push(err1);
+    }
+    errors++;
+  }
+  var _valid0 = _errs1 === errors;
+  valid0 = valid0 || _valid0;
+  if (!valid0) {
+    const _errs3 = errors;
+    if (!validate38(data, { instancePath, parentData, parentDataProperty, rootData })) {
+      vErrors = vErrors === null ? validate38.errors : vErrors.concat(validate38.errors);
+      errors = vErrors.length;
+    }
+    var _valid0 = _errs3 === errors;
+    valid0 = valid0 || _valid0;
+  }
+  if (!valid0) {
+    const err2 = { instancePath, schemaPath: "#/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+    if (vErrors === null) {
+      vErrors = [err2];
+    } else {
+      vErrors.push(err2);
+    }
+    errors++;
+  } else {
+    errors = _errs0;
+    if (vErrors !== null) {
+      if (_errs0) {
+        vErrors.length = _errs0;
+      } else {
+        vErrors = null;
+      }
+    }
+  }
+  validate37.errors = vErrors;
+  return errors === 0;
+}
+function validate21(data, { instancePath = "", parentData, parentDataProperty, rootData = data } = {}) {
+  let vErrors = null;
+  let errors = 0;
+  if (data && typeof data == "object" && !Array.isArray(data)) {
+    for (const key0 in data) {
+      if (!func2.call(schema6.properties, key0)) {
+        const err0 = { instancePath, schemaPath: "#/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key0 }, message: "must NOT have additional properties" };
+        if (vErrors === null) {
+          vErrors = [err0];
+        } else {
+          vErrors.push(err0);
+        }
+        errors++;
+      }
+    }
+    if (data.$schema !== undefined) {
+      if (typeof data.$schema !== "string") {
+        const err1 = { instancePath: instancePath + "/$schema", schemaPath: "#/properties/%24schema/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err1];
+        } else {
+          vErrors.push(err1);
+        }
+        errors++;
+      }
+    }
+    if (data.commands !== undefined) {
+      let data1 = data.commands;
+      if (data1 && typeof data1 == "object" && !Array.isArray(data1)) {
+        for (const key1 in data1) {
+          if (!(key1 === "actionPrefix" || key1 === "bash" || key1 === "expr")) {
+            const err2 = { instancePath: instancePath + "/commands", schemaPath: "#/properties/commands/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key1 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err2];
+            } else {
+              vErrors.push(err2);
+            }
+            errors++;
+          }
+        }
+        if (data1.actionPrefix !== undefined) {
+          if (typeof data1.actionPrefix !== "string") {
+            const err3 = { instancePath: instancePath + "/commands/actionPrefix", schemaPath: "#/properties/commands/properties/actionPrefix/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err3];
+            } else {
+              vErrors.push(err3);
+            }
+            errors++;
+          }
+        }
+        if (data1.bash !== undefined) {
+          if (typeof data1.bash !== "boolean") {
+            const err4 = { instancePath: instancePath + "/commands/bash", schemaPath: "#/properties/commands/properties/bash/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err4];
+            } else {
+              vErrors.push(err4);
+            }
+            errors++;
+          }
+        }
+        if (data1.expr !== undefined) {
+          if (typeof data1.expr !== "boolean") {
+            const err5 = { instancePath: instancePath + "/commands/expr", schemaPath: "#/properties/commands/properties/expr/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err5];
+            } else {
+              vErrors.push(err5);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err6 = { instancePath: instancePath + "/commands", schemaPath: "#/properties/commands/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err6];
+        } else {
+          vErrors.push(err6);
+        }
+        errors++;
+      }
+    }
+    if (data.compaction !== undefined) {
+      let data5 = data.compaction;
+      if (data5 && typeof data5 == "object" && !Array.isArray(data5)) {
+        for (const key2 in data5) {
+          if (!(key2 === "enabled" || key2 === "keepTokens" || key2 === "reasoning" || key2 === "summaryTokens" || key2 === "threshold")) {
+            const err7 = { instancePath: instancePath + "/compaction", schemaPath: "#/properties/compaction/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key2 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err7];
+            } else {
+              vErrors.push(err7);
+            }
+            errors++;
+          }
+        }
+        if (data5.enabled !== undefined) {
+          if (typeof data5.enabled !== "boolean") {
+            const err8 = { instancePath: instancePath + "/compaction/enabled", schemaPath: "#/properties/compaction/properties/enabled/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err8];
+            } else {
+              vErrors.push(err8);
+            }
+            errors++;
+          }
+        }
+        if (data5.keepTokens !== undefined) {
+          let data7 = data5.keepTokens;
+          if (!(typeof data7 == "number" && isFinite(data7))) {
+            const err9 = { instancePath: instancePath + "/compaction/keepTokens", schemaPath: "#/properties/compaction/properties/keepTokens/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err9];
+            } else {
+              vErrors.push(err9);
+            }
+            errors++;
+          }
+        }
+        if (data5.reasoning !== undefined) {
+          if (!validate22(data5.reasoning, { instancePath: instancePath + "/compaction/reasoning", parentData: data5, parentDataProperty: "reasoning", rootData })) {
+            vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data5.summaryTokens !== undefined) {
+          let data9 = data5.summaryTokens;
+          if (!(typeof data9 == "number" && isFinite(data9))) {
+            const err10 = { instancePath: instancePath + "/compaction/summaryTokens", schemaPath: "#/properties/compaction/properties/summaryTokens/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err10];
+            } else {
+              vErrors.push(err10);
+            }
+            errors++;
+          }
+        }
+        if (data5.threshold !== undefined) {
+          let data10 = data5.threshold;
+          if (!(typeof data10 == "number" && isFinite(data10))) {
+            const err11 = { instancePath: instancePath + "/compaction/threshold", schemaPath: "#/properties/compaction/properties/threshold/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err11];
+            } else {
+              vErrors.push(err11);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err12 = { instancePath: instancePath + "/compaction", schemaPath: "#/properties/compaction/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err12];
+        } else {
+          vErrors.push(err12);
+        }
+        errors++;
+      }
+    }
+    if (data.keymap !== undefined) {
+      let data11 = data.keymap;
+      if (data11 && typeof data11 == "object" && !Array.isArray(data11)) {
+        for (const key3 in data11) {
+          let data12 = data11[key3];
+          const _errs29 = errors;
+          let valid4 = false;
+          const _errs30 = errors;
+          if (typeof data12 !== "string") {
+            const err13 = { instancePath: instancePath + "/keymap/" + key3.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/properties/keymap/additionalProperties/anyOf/0/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err13];
+            } else {
+              vErrors.push(err13);
+            }
+            errors++;
+          }
+          var _valid0 = _errs30 === errors;
+          valid4 = valid4 || _valid0;
+          if (!valid4) {
+            const _errs32 = errors;
+            if (Array.isArray(data12)) {
+              const len0 = data12.length;
+              for (let i0 = 0;i0 < len0; i0++) {
+                if (typeof data12[i0] !== "string") {
+                  const err14 = { instancePath: instancePath + "/keymap/" + key3.replace(/~/g, "~0").replace(/\//g, "~1") + "/" + i0, schemaPath: "#/properties/keymap/additionalProperties/anyOf/1/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                  if (vErrors === null) {
+                    vErrors = [err14];
+                  } else {
+                    vErrors.push(err14);
+                  }
+                  errors++;
+                }
+              }
+            } else {
+              const err15 = { instancePath: instancePath + "/keymap/" + key3.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/properties/keymap/additionalProperties/anyOf/1/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+              if (vErrors === null) {
+                vErrors = [err15];
+              } else {
+                vErrors.push(err15);
+              }
+              errors++;
+            }
+            var _valid0 = _errs32 === errors;
+            valid4 = valid4 || _valid0;
+          }
+          if (!valid4) {
+            const err16 = { instancePath: instancePath + "/keymap/" + key3.replace(/~/g, "~0").replace(/\//g, "~1"), schemaPath: "#/properties/keymap/additionalProperties/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+            if (vErrors === null) {
+              vErrors = [err16];
+            } else {
+              vErrors.push(err16);
+            }
+            errors++;
+          } else {
+            errors = _errs29;
+            if (vErrors !== null) {
+              if (_errs29) {
+                vErrors.length = _errs29;
+              } else {
+                vErrors = null;
+              }
+            }
+          }
+        }
+      } else {
+        const err17 = { instancePath: instancePath + "/keymap", schemaPath: "#/properties/keymap/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err17];
+        } else {
+          vErrors.push(err17);
+        }
+        errors++;
+      }
+    }
+    if (data.loop !== undefined) {
+      let data14 = data.loop;
+      if (data14 && typeof data14 == "object" && !Array.isArray(data14)) {
+        for (const key4 in data14) {
+          if (!func2.call(schema6.properties.loop.properties, key4)) {
+            const err18 = { instancePath: instancePath + "/loop", schemaPath: "#/properties/loop/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key4 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err18];
+            } else {
+              vErrors.push(err18);
+            }
+            errors++;
+          }
+        }
+        if (data14.autoStart !== undefined) {
+          if (typeof data14.autoStart !== "boolean") {
+            const err19 = { instancePath: instancePath + "/loop/autoStart", schemaPath: "#/properties/loop/properties/autoStart/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err19];
+            } else {
+              vErrors.push(err19);
+            }
+            errors++;
+          }
+        }
+        if (data14.enabled !== undefined) {
+          if (typeof data14.enabled !== "boolean") {
+            const err20 = { instancePath: instancePath + "/loop/enabled", schemaPath: "#/properties/loop/properties/enabled/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err20];
+            } else {
+              vErrors.push(err20);
+            }
+            errors++;
+          }
+        }
+        if (data14.goal !== undefined) {
+          if (typeof data14.goal !== "string") {
+            const err21 = { instancePath: instancePath + "/loop/goal", schemaPath: "#/properties/loop/properties/goal/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err21];
+            } else {
+              vErrors.push(err21);
+            }
+            errors++;
+          }
+        }
+        if (data14.heartbeatMs !== undefined) {
+          let data18 = data14.heartbeatMs;
+          if (!(typeof data18 == "number" && isFinite(data18))) {
+            const err22 = { instancePath: instancePath + "/loop/heartbeatMs", schemaPath: "#/properties/loop/properties/heartbeatMs/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err22];
+            } else {
+              vErrors.push(err22);
+            }
+            errors++;
+          }
+        }
+        if (data14.maxCostUsd !== undefined) {
+          let data19 = data14.maxCostUsd;
+          if (!(typeof data19 == "number" && isFinite(data19))) {
+            const err23 = { instancePath: instancePath + "/loop/maxCostUsd", schemaPath: "#/properties/loop/properties/maxCostUsd/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err23];
+            } else {
+              vErrors.push(err23);
+            }
+            errors++;
+          }
+        }
+        if (data14.maxNoProgressTurns !== undefined) {
+          let data20 = data14.maxNoProgressTurns;
+          if (!(typeof data20 == "number" && isFinite(data20))) {
+            const err24 = { instancePath: instancePath + "/loop/maxNoProgressTurns", schemaPath: "#/properties/loop/properties/maxNoProgressTurns/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err24];
+            } else {
+              vErrors.push(err24);
+            }
+            errors++;
+          }
+        }
+        if (data14.maxParallel !== undefined) {
+          let data21 = data14.maxParallel;
+          if (!(typeof data21 == "number" && isFinite(data21))) {
+            const err25 = { instancePath: instancePath + "/loop/maxParallel", schemaPath: "#/properties/loop/properties/maxParallel/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err25];
+            } else {
+              vErrors.push(err25);
+            }
+            errors++;
+          }
+        }
+        if (data14.maxTurns !== undefined) {
+          let data22 = data14.maxTurns;
+          if (!(typeof data22 == "number" && isFinite(data22))) {
+            const err26 = { instancePath: instancePath + "/loop/maxTurns", schemaPath: "#/properties/loop/properties/maxTurns/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err26];
+            } else {
+              vErrors.push(err26);
+            }
+            errors++;
+          }
+        }
+        if (data14.maxWallTimeMs !== undefined) {
+          let data23 = data14.maxWallTimeMs;
+          if (!(typeof data23 == "number" && isFinite(data23))) {
+            const err27 = { instancePath: instancePath + "/loop/maxWallTimeMs", schemaPath: "#/properties/loop/properties/maxWallTimeMs/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err27];
+            } else {
+              vErrors.push(err27);
+            }
+            errors++;
+          }
+        }
+        if (data14.onNoProgress !== undefined) {
+          if (!validate24(data14.onNoProgress, { instancePath: instancePath + "/loop/onNoProgress", parentData: data14, parentDataProperty: "onNoProgress", rootData })) {
+            vErrors = vErrors === null ? validate24.errors : vErrors.concat(validate24.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data14.profile !== undefined) {
+          if (!validate26(data14.profile, { instancePath: instancePath + "/loop/profile", parentData: data14, parentDataProperty: "profile", rootData })) {
+            vErrors = vErrors === null ? validate26.errors : vErrors.concat(validate26.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data14.verify !== undefined) {
+          let data26 = data14.verify;
+          if (data26 && typeof data26 == "object" && !Array.isArray(data26)) {
+            if (data26.command === undefined) {
+              const err28 = { instancePath: instancePath + "/loop/verify", schemaPath: "#/properties/loop/properties/verify/required", keyword: "required", params: { missingProperty: "command" }, message: "must have required property '" + "command" + "'" };
+              if (vErrors === null) {
+                vErrors = [err28];
+              } else {
+                vErrors.push(err28);
+              }
+              errors++;
+            }
+            for (const key5 in data26) {
+              if (!(key5 === "command" || key5 === "cwd" || key5 === "timeoutMs")) {
+                const err29 = { instancePath: instancePath + "/loop/verify", schemaPath: "#/properties/loop/properties/verify/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key5 }, message: "must NOT have additional properties" };
+                if (vErrors === null) {
+                  vErrors = [err29];
+                } else {
+                  vErrors.push(err29);
+                }
+                errors++;
+              }
+            }
+            if (data26.command !== undefined) {
+              let data27 = data26.command;
+              if (Array.isArray(data27)) {
+                const len1 = data27.length;
+                for (let i1 = 0;i1 < len1; i1++) {
+                  if (typeof data27[i1] !== "string") {
+                    const err30 = { instancePath: instancePath + "/loop/verify/command/" + i1, schemaPath: "#/properties/loop/properties/verify/properties/command/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                    if (vErrors === null) {
+                      vErrors = [err30];
+                    } else {
+                      vErrors.push(err30);
+                    }
+                    errors++;
+                  }
+                }
+              } else {
+                const err31 = { instancePath: instancePath + "/loop/verify/command", schemaPath: "#/properties/loop/properties/verify/properties/command/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+                if (vErrors === null) {
+                  vErrors = [err31];
+                } else {
+                  vErrors.push(err31);
+                }
+                errors++;
+              }
+            }
+            if (data26.cwd !== undefined) {
+              if (typeof data26.cwd !== "string") {
+                const err32 = { instancePath: instancePath + "/loop/verify/cwd", schemaPath: "#/properties/loop/properties/verify/properties/cwd/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err32];
+                } else {
+                  vErrors.push(err32);
+                }
+                errors++;
+              }
+            }
+            if (data26.timeoutMs !== undefined) {
+              let data30 = data26.timeoutMs;
+              if (!(typeof data30 == "number" && isFinite(data30))) {
+                const err33 = { instancePath: instancePath + "/loop/verify/timeoutMs", schemaPath: "#/properties/loop/properties/verify/properties/timeoutMs/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+                if (vErrors === null) {
+                  vErrors = [err33];
+                } else {
+                  vErrors.push(err33);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err34 = { instancePath: instancePath + "/loop/verify", schemaPath: "#/properties/loop/properties/verify/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+            if (vErrors === null) {
+              vErrors = [err34];
+            } else {
+              vErrors.push(err34);
+            }
+            errors++;
+          }
+        }
+        if (data14.watch !== undefined) {
+          let data31 = data14.watch;
+          if (data31 && typeof data31 == "object" && !Array.isArray(data31)) {
+            if (data31.everyMs === undefined) {
+              const err35 = { instancePath: instancePath + "/loop/watch", schemaPath: "#/properties/loop/properties/watch/required", keyword: "required", params: { missingProperty: "everyMs" }, message: "must have required property '" + "everyMs" + "'" };
+              if (vErrors === null) {
+                vErrors = [err35];
+              } else {
+                vErrors.push(err35);
+              }
+              errors++;
+            }
+            for (const key6 in data31) {
+              if (!(key6 === "everyMs" || key6 === "hint" || key6 === "maxAttempts")) {
+                const err36 = { instancePath: instancePath + "/loop/watch", schemaPath: "#/properties/loop/properties/watch/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key6 }, message: "must NOT have additional properties" };
+                if (vErrors === null) {
+                  vErrors = [err36];
+                } else {
+                  vErrors.push(err36);
+                }
+                errors++;
+              }
+            }
+            if (data31.everyMs !== undefined) {
+              let data32 = data31.everyMs;
+              if (!(typeof data32 == "number" && isFinite(data32))) {
+                const err37 = { instancePath: instancePath + "/loop/watch/everyMs", schemaPath: "#/properties/loop/properties/watch/properties/everyMs/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+                if (vErrors === null) {
+                  vErrors = [err37];
+                } else {
+                  vErrors.push(err37);
+                }
+                errors++;
+              }
+            }
+            if (data31.hint !== undefined) {
+              if (typeof data31.hint !== "string") {
+                const err38 = { instancePath: instancePath + "/loop/watch/hint", schemaPath: "#/properties/loop/properties/watch/properties/hint/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err38];
+                } else {
+                  vErrors.push(err38);
+                }
+                errors++;
+              }
+            }
+            if (data31.maxAttempts !== undefined) {
+              let data34 = data31.maxAttempts;
+              if (!(typeof data34 == "number" && isFinite(data34))) {
+                const err39 = { instancePath: instancePath + "/loop/watch/maxAttempts", schemaPath: "#/properties/loop/properties/watch/properties/maxAttempts/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+                if (vErrors === null) {
+                  vErrors = [err39];
+                } else {
+                  vErrors.push(err39);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err40 = { instancePath: instancePath + "/loop/watch", schemaPath: "#/properties/loop/properties/watch/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+            if (vErrors === null) {
+              vErrors = [err40];
+            } else {
+              vErrors.push(err40);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err41 = { instancePath: instancePath + "/loop", schemaPath: "#/properties/loop/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err41];
+        } else {
+          vErrors.push(err41);
+        }
+        errors++;
+      }
+    }
+    if (data.masking !== undefined) {
+      let data35 = data.masking;
+      if (data35 && typeof data35 == "object" && !Array.isArray(data35)) {
+        for (const key7 in data35) {
+          if (!(key7 === "delta" || key7 === "enabled" || key7 === "keepTurns" || key7 === "minTokens" || key7 === "target")) {
+            const err42 = { instancePath: instancePath + "/masking", schemaPath: "#/properties/masking/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key7 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err42];
+            } else {
+              vErrors.push(err42);
+            }
+            errors++;
+          }
+        }
+        if (data35.delta !== undefined) {
+          let data36 = data35.delta;
+          if (!(typeof data36 == "number" && isFinite(data36))) {
+            const err43 = { instancePath: instancePath + "/masking/delta", schemaPath: "#/properties/masking/properties/delta/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err43];
+            } else {
+              vErrors.push(err43);
+            }
+            errors++;
+          }
+        }
+        if (data35.enabled !== undefined) {
+          if (typeof data35.enabled !== "boolean") {
+            const err44 = { instancePath: instancePath + "/masking/enabled", schemaPath: "#/properties/masking/properties/enabled/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err44];
+            } else {
+              vErrors.push(err44);
+            }
+            errors++;
+          }
+        }
+        if (data35.keepTurns !== undefined) {
+          let data38 = data35.keepTurns;
+          if (!(typeof data38 == "number" && isFinite(data38))) {
+            const err45 = { instancePath: instancePath + "/masking/keepTurns", schemaPath: "#/properties/masking/properties/keepTurns/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err45];
+            } else {
+              vErrors.push(err45);
+            }
+            errors++;
+          }
+        }
+        if (data35.minTokens !== undefined) {
+          let data39 = data35.minTokens;
+          if (!(typeof data39 == "number" && isFinite(data39))) {
+            const err46 = { instancePath: instancePath + "/masking/minTokens", schemaPath: "#/properties/masking/properties/minTokens/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err46];
+            } else {
+              vErrors.push(err46);
+            }
+            errors++;
+          }
+        }
+        if (data35.target !== undefined) {
+          let data40 = data35.target;
+          if (!(typeof data40 == "number" && isFinite(data40))) {
+            const err47 = { instancePath: instancePath + "/masking/target", schemaPath: "#/properties/masking/properties/target/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err47];
+            } else {
+              vErrors.push(err47);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err48 = { instancePath: instancePath + "/masking", schemaPath: "#/properties/masking/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err48];
+        } else {
+          vErrors.push(err48);
+        }
+        errors++;
+      }
+    }
+    if (data.model !== undefined) {
+      if (typeof data.model !== "string") {
+        const err49 = { instancePath: instancePath + "/model", schemaPath: "#/properties/model/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+        if (vErrors === null) {
+          vErrors = [err49];
+        } else {
+          vErrors.push(err49);
+        }
+        errors++;
+      }
+    }
+    if (data.permissions !== undefined) {
+      let data42 = data.permissions;
+      if (data42 && typeof data42 == "object" && !Array.isArray(data42)) {
+        for (const key8 in data42) {
+          if (!(key8 === "allow" || key8 === "ask" || key8 === "deny" || key8 === "preset")) {
+            const err50 = { instancePath: instancePath + "/permissions", schemaPath: "#/properties/permissions/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key8 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err50];
+            } else {
+              vErrors.push(err50);
+            }
+            errors++;
+          }
+        }
+        if (data42.allow !== undefined) {
+          let data43 = data42.allow;
+          if (Array.isArray(data43)) {
+            const len2 = data43.length;
+            for (let i2 = 0;i2 < len2; i2++) {
+              if (typeof data43[i2] !== "string") {
+                const err51 = { instancePath: instancePath + "/permissions/allow/" + i2, schemaPath: "#/properties/permissions/properties/allow/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err51];
+                } else {
+                  vErrors.push(err51);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err52 = { instancePath: instancePath + "/permissions/allow", schemaPath: "#/properties/permissions/properties/allow/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err52];
+            } else {
+              vErrors.push(err52);
+            }
+            errors++;
+          }
+        }
+        if (data42.ask !== undefined) {
+          let data45 = data42.ask;
+          if (Array.isArray(data45)) {
+            const len3 = data45.length;
+            for (let i3 = 0;i3 < len3; i3++) {
+              if (typeof data45[i3] !== "string") {
+                const err53 = { instancePath: instancePath + "/permissions/ask/" + i3, schemaPath: "#/properties/permissions/properties/ask/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err53];
+                } else {
+                  vErrors.push(err53);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err54 = { instancePath: instancePath + "/permissions/ask", schemaPath: "#/properties/permissions/properties/ask/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err54];
+            } else {
+              vErrors.push(err54);
+            }
+            errors++;
+          }
+        }
+        if (data42.deny !== undefined) {
+          let data47 = data42.deny;
+          if (Array.isArray(data47)) {
+            const len4 = data47.length;
+            for (let i4 = 0;i4 < len4; i4++) {
+              if (typeof data47[i4] !== "string") {
+                const err55 = { instancePath: instancePath + "/permissions/deny/" + i4, schemaPath: "#/properties/permissions/properties/deny/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err55];
+                } else {
+                  vErrors.push(err55);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err56 = { instancePath: instancePath + "/permissions/deny", schemaPath: "#/properties/permissions/properties/deny/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err56];
+            } else {
+              vErrors.push(err56);
+            }
+            errors++;
+          }
+        }
+        if (data42.preset !== undefined) {
+          if (!validate28(data42.preset, { instancePath: instancePath + "/permissions/preset", parentData: data42, parentDataProperty: "preset", rootData })) {
+            vErrors = vErrors === null ? validate28.errors : vErrors.concat(validate28.errors);
+            errors = vErrors.length;
+          }
+        }
+      } else {
+        const err57 = { instancePath: instancePath + "/permissions", schemaPath: "#/properties/permissions/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err57];
+        } else {
+          vErrors.push(err57);
+        }
+        errors++;
+      }
+    }
+    if (data.plugins !== undefined) {
+      let data50 = data.plugins;
+      if (Array.isArray(data50)) {
+        const len5 = data50.length;
+        for (let i5 = 0;i5 < len5; i5++) {
+          if (typeof data50[i5] !== "string") {
+            const err58 = { instancePath: instancePath + "/plugins/" + i5, schemaPath: "#/properties/plugins/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err58];
+            } else {
+              vErrors.push(err58);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err59 = { instancePath: instancePath + "/plugins", schemaPath: "#/properties/plugins/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err59];
+        } else {
+          vErrors.push(err59);
+        }
+        errors++;
+      }
+    }
+    if (data.reasoning !== undefined) {
+      if (!validate22(data.reasoning, { instancePath: instancePath + "/reasoning", parentData: data, parentDataProperty: "reasoning", rootData })) {
+        vErrors = vErrors === null ? validate22.errors : vErrors.concat(validate22.errors);
+        errors = vErrors.length;
+      }
+    }
+    if (data.resources !== undefined) {
+      let data53 = data.resources;
+      if (data53 && typeof data53 == "object" && !Array.isArray(data53)) {
+        for (const key9 in data53) {
+          if (!validate31(data53[key9], { instancePath: instancePath + "/resources/" + key9.replace(/~/g, "~0").replace(/\//g, "~1"), parentData: data53, parentDataProperty: key9, rootData })) {
+            vErrors = vErrors === null ? validate31.errors : vErrors.concat(validate31.errors);
+            errors = vErrors.length;
+          }
+        }
+      } else {
+        const err60 = { instancePath: instancePath + "/resources", schemaPath: "#/properties/resources/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err60];
+        } else {
+          vErrors.push(err60);
+        }
+        errors++;
+      }
+    }
+    if (data.skills !== undefined) {
+      let data55 = data.skills;
+      if (data55 && typeof data55 == "object" && !Array.isArray(data55)) {
+        for (const key10 in data55) {
+          if (!(key10 === "actionPrefix" || key10 === "actions" || key10 === "enabled")) {
+            const err61 = { instancePath: instancePath + "/skills", schemaPath: "#/properties/skills/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key10 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err61];
+            } else {
+              vErrors.push(err61);
+            }
+            errors++;
+          }
+        }
+        if (data55.actionPrefix !== undefined) {
+          if (typeof data55.actionPrefix !== "string") {
+            const err62 = { instancePath: instancePath + "/skills/actionPrefix", schemaPath: "#/properties/skills/properties/actionPrefix/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err62];
+            } else {
+              vErrors.push(err62);
+            }
+            errors++;
+          }
+        }
+        if (data55.actions !== undefined) {
+          if (typeof data55.actions !== "boolean") {
+            const err63 = { instancePath: instancePath + "/skills/actions", schemaPath: "#/properties/skills/properties/actions/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err63];
+            } else {
+              vErrors.push(err63);
+            }
+            errors++;
+          }
+        }
+        if (data55.enabled !== undefined) {
+          if (typeof data55.enabled !== "boolean") {
+            const err64 = { instancePath: instancePath + "/skills/enabled", schemaPath: "#/properties/skills/properties/enabled/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err64];
+            } else {
+              vErrors.push(err64);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err65 = { instancePath: instancePath + "/skills", schemaPath: "#/properties/skills/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err65];
+        } else {
+          vErrors.push(err65);
+        }
+        errors++;
+      }
+    }
+    if (data.system !== undefined) {
+      let data59 = data.system;
+      if (data59 && typeof data59 == "object" && !Array.isArray(data59)) {
+        for (const key11 in data59) {
+          if (!(key11 === "bash" || key11 === "git" || key11 === "npm")) {
+            const err66 = { instancePath: instancePath + "/system", schemaPath: "#/properties/system/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key11 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err66];
+            } else {
+              vErrors.push(err66);
+            }
+            errors++;
+          }
+        }
+        if (data59.bash !== undefined) {
+          let data60 = data59.bash;
+          if (Array.isArray(data60)) {
+            const len6 = data60.length;
+            for (let i6 = 0;i6 < len6; i6++) {
+              if (typeof data60[i6] !== "string") {
+                const err67 = { instancePath: instancePath + "/system/bash/" + i6, schemaPath: "#/properties/system/properties/bash/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err67];
+                } else {
+                  vErrors.push(err67);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err68 = { instancePath: instancePath + "/system/bash", schemaPath: "#/properties/system/properties/bash/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err68];
+            } else {
+              vErrors.push(err68);
+            }
+            errors++;
+          }
+        }
+        if (data59.git !== undefined) {
+          let data62 = data59.git;
+          if (Array.isArray(data62)) {
+            const len7 = data62.length;
+            for (let i7 = 0;i7 < len7; i7++) {
+              if (typeof data62[i7] !== "string") {
+                const err69 = { instancePath: instancePath + "/system/git/" + i7, schemaPath: "#/properties/system/properties/git/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err69];
+                } else {
+                  vErrors.push(err69);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err70 = { instancePath: instancePath + "/system/git", schemaPath: "#/properties/system/properties/git/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err70];
+            } else {
+              vErrors.push(err70);
+            }
+            errors++;
+          }
+        }
+        if (data59.npm !== undefined) {
+          let data64 = data59.npm;
+          if (Array.isArray(data64)) {
+            const len8 = data64.length;
+            for (let i8 = 0;i8 < len8; i8++) {
+              if (typeof data64[i8] !== "string") {
+                const err71 = { instancePath: instancePath + "/system/npm/" + i8, schemaPath: "#/properties/system/properties/npm/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err71];
+                } else {
+                  vErrors.push(err71);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err72 = { instancePath: instancePath + "/system/npm", schemaPath: "#/properties/system/properties/npm/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err72];
+            } else {
+              vErrors.push(err72);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err73 = { instancePath: instancePath + "/system", schemaPath: "#/properties/system/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err73];
+        } else {
+          vErrors.push(err73);
+        }
+        errors++;
+      }
+    }
+    if (data.tools !== undefined) {
+      let data66 = data.tools;
+      if (Array.isArray(data66)) {
+        const len9 = data66.length;
+        for (let i9 = 0;i9 < len9; i9++) {
+          if (typeof data66[i9] !== "string") {
+            const err74 = { instancePath: instancePath + "/tools/" + i9, schemaPath: "#/properties/tools/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err74];
+            } else {
+              vErrors.push(err74);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err75 = { instancePath: instancePath + "/tools", schemaPath: "#/properties/tools/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+        if (vErrors === null) {
+          vErrors = [err75];
+        } else {
+          vErrors.push(err75);
+        }
+        errors++;
+      }
+    }
+    if (data.ui !== undefined) {
+      let data68 = data.ui;
+      if (data68 && typeof data68 == "object" && !Array.isArray(data68)) {
+        for (const key12 in data68) {
+          if (!func2.call(schema6.properties.ui.properties, key12)) {
+            const err76 = { instancePath: instancePath + "/ui", schemaPath: "#/properties/ui/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key12 }, message: "must NOT have additional properties" };
+            if (vErrors === null) {
+              vErrors = [err76];
+            } else {
+              vErrors.push(err76);
+            }
+            errors++;
+          }
+        }
+        if (data68.collapsedTools !== undefined) {
+          let data69 = data68.collapsedTools;
+          if (Array.isArray(data69)) {
+            const len10 = data69.length;
+            for (let i10 = 0;i10 < len10; i10++) {
+              if (!validate33(data69[i10], { instancePath: instancePath + "/ui/collapsedTools/" + i10, parentData: data69, parentDataProperty: i10, rootData })) {
+                vErrors = vErrors === null ? validate33.errors : vErrors.concat(validate33.errors);
+                errors = vErrors.length;
+              }
+            }
+          } else {
+            const err77 = { instancePath: instancePath + "/ui/collapsedTools", schemaPath: "#/properties/ui/properties/collapsedTools/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err77];
+            } else {
+              vErrors.push(err77);
+            }
+            errors++;
+          }
+        }
+        if (data68.copyOnSelect !== undefined) {
+          if (typeof data68.copyOnSelect !== "boolean") {
+            const err78 = { instancePath: instancePath + "/ui/copyOnSelect", schemaPath: "#/properties/ui/properties/copyOnSelect/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err78];
+            } else {
+              vErrors.push(err78);
+            }
+            errors++;
+          }
+        }
+        if (data68.images !== undefined) {
+          if (typeof data68.images !== "boolean") {
+            const err79 = { instancePath: instancePath + "/ui/images", schemaPath: "#/properties/ui/properties/images/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err79];
+            } else {
+              vErrors.push(err79);
+            }
+            errors++;
+          }
+        }
+        if (data68.listHeight !== undefined) {
+          let data73 = data68.listHeight;
+          if (!(typeof data73 == "number" && isFinite(data73))) {
+            const err80 = { instancePath: instancePath + "/ui/listHeight", schemaPath: "#/properties/ui/properties/listHeight/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err80];
+            } else {
+              vErrors.push(err80);
+            }
+            errors++;
+          }
+        }
+        if (data68.mode !== undefined) {
+          let data74 = data68.mode;
+          if (typeof data74 !== "string") {
+            const err81 = { instancePath: instancePath + "/ui/mode", schemaPath: "#/properties/ui/properties/mode/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err81];
+            } else {
+              vErrors.push(err81);
+            }
+            errors++;
+          }
+          if (!(data74 === "scrollback" || data74 === "fullscreen")) {
+            const err82 = { instancePath: instancePath + "/ui/mode", schemaPath: "#/properties/ui/properties/mode/enum", keyword: "enum", params: { allowedValues: schema6.properties.ui.properties.mode.enum }, message: "must be equal to one of the allowed values" };
+            if (vErrors === null) {
+              vErrors = [err82];
+            } else {
+              vErrors.push(err82);
+            }
+            errors++;
+          }
+        }
+        if (data68.reasoning !== undefined) {
+          if (typeof data68.reasoning !== "boolean") {
+            const err83 = { instancePath: instancePath + "/ui/reasoning", schemaPath: "#/properties/ui/properties/reasoning/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err83];
+            } else {
+              vErrors.push(err83);
+            }
+            errors++;
+          }
+        }
+        if (data68.sessionTree !== undefined) {
+          let data76 = data68.sessionTree;
+          if (Array.isArray(data76)) {
+            const len11 = data76.length;
+            for (let i11 = 0;i11 < len11; i11++) {
+              let data77 = data76[i11];
+              if (typeof data77 !== "string") {
+                const err84 = { instancePath: instancePath + "/ui/sessionTree/" + i11, schemaPath: "#/properties/ui/properties/sessionTree/items/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                if (vErrors === null) {
+                  vErrors = [err84];
+                } else {
+                  vErrors.push(err84);
+                }
+                errors++;
+              }
+              if (!(data77 === "assistant" || data77 === "reasoning" || data77 === "tools" || data77 === "system")) {
+                const err85 = { instancePath: instancePath + "/ui/sessionTree/" + i11, schemaPath: "#/properties/ui/properties/sessionTree/items/enum", keyword: "enum", params: { allowedValues: schema6.properties.ui.properties.sessionTree.items.enum }, message: "must be equal to one of the allowed values" };
+                if (vErrors === null) {
+                  vErrors = [err85];
+                } else {
+                  vErrors.push(err85);
+                }
+                errors++;
+              }
+            }
+          } else {
+            const err86 = { instancePath: instancePath + "/ui/sessionTree", schemaPath: "#/properties/ui/properties/sessionTree/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+            if (vErrors === null) {
+              vErrors = [err86];
+            } else {
+              vErrors.push(err86);
+            }
+            errors++;
+          }
+        }
+        if (data68.shiki !== undefined) {
+          if (!validate37(data68.shiki, { instancePath: instancePath + "/ui/shiki", parentData: data68, parentDataProperty: "shiki", rootData })) {
+            vErrors = vErrors === null ? validate37.errors : vErrors.concat(validate37.errors);
+            errors = vErrors.length;
+          }
+        }
+        if (data68.theme !== undefined) {
+          if (typeof data68.theme !== "string") {
+            const err87 = { instancePath: instancePath + "/ui/theme", schemaPath: "#/properties/ui/properties/theme/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+            if (vErrors === null) {
+              vErrors = [err87];
+            } else {
+              vErrors.push(err87);
+            }
+            errors++;
+          }
+        }
+        if (data68.transparent !== undefined) {
+          if (typeof data68.transparent !== "boolean") {
+            const err88 = { instancePath: instancePath + "/ui/transparent", schemaPath: "#/properties/ui/properties/transparent/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+            if (vErrors === null) {
+              vErrors = [err88];
+            } else {
+              vErrors.push(err88);
+            }
+            errors++;
+          }
+        }
+        if (data68.treeHeight !== undefined) {
+          let data81 = data68.treeHeight;
+          if (!(typeof data81 == "number" && isFinite(data81))) {
+            const err89 = { instancePath: instancePath + "/ui/treeHeight", schemaPath: "#/properties/ui/properties/treeHeight/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+            if (vErrors === null) {
+              vErrors = [err89];
+            } else {
+              vErrors.push(err89);
+            }
+            errors++;
+          }
+        }
+      } else {
+        const err90 = { instancePath: instancePath + "/ui", schemaPath: "#/properties/ui/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+        if (vErrors === null) {
+          vErrors = [err90];
+        } else {
+          vErrors.push(err90);
+        }
+        errors++;
+      }
+    }
+  } else {
+    const err91 = { instancePath, schemaPath: "#/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+    if (vErrors === null) {
+      vErrors = [err91];
+    } else {
+      vErrors.push(err91);
+    }
+    errors++;
+  }
+  validate21.errors = vErrors;
+  return errors === 0;
+}
+
+  return module.exports.default
+})()
+
+export function check(input: unknown): boolean {
+  return validator(input)
+}
+
+export function validate(input: unknown): unknown {
+  if (check(input)) return input
+  const errors = (validator.errors ?? []).map((error) => {
+    let path = error.instancePath
+    if (error.keyword === "required") path += "/" + String(error.params.missingProperty)
+    if (error.keyword === "additionalProperties") path += "/" + String(error.params.additionalProperty)
+    return (path === "" ? "/" : path) + ": " + (error.message ?? error.keyword)
+  })
+  throw new Error("Invalid config:\n" + errors.join("\n"))
 }

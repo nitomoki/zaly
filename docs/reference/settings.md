@@ -5,149 +5,13 @@ Generated from the configuration schema and default settings. CLI overrides proj
 Defaults for `system.npm` depend on the runtime: Bun under Bun, npm under Node. The `search` tool is additionally enabled when `BRAVE_API_KEY` is set.
 
 <!-- settings:start -->
-## `model`
+## `$schema`
 
 **Type:** `string`
-
-Default model to use for the agent.
-
-## `reasoning`
-
-**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
-
-Default reasoning effort.
-
-**Default:** `"medium"`
-
-## `tools`
-
-**Type:** `Array<string>`
-
-**Default:** `["bash","edit","read","write","fetch","find","grep","task_list","task_poll","task_stop"]`
-
-## `ui`
-
-**Type:** `object`
-
-## `ui.mode`
-
-**Type:** `"fullscreen" | "scrollback"`
-
-Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.
-
-**Default:** `"fullscreen"`
-
-## `ui.copyOnSelect`
-
-**Type:** `boolean`
-
-**Default:** `true`
-
-## `ui.collapsedTools`
-
-**Type:** `Array<AnyTool>`
-
-Tools whose result body should be hidden in the UI.
-
-**Default:** `["read"]`
-
-## `ui.images`
-
-**Type:** `boolean`
-
-Render images, if supported by the terminal
-
-**Default:** `true`
-
-## `ui.listHeight`
-
-**Type:** `number`
-
-Maximum number of visible rows in selection lists, like pickers and autocomplete.
-
-**Default:** `10`
-
-## `ui.reasoning`
-
-**Type:** `boolean`
-
-Whether to show the reasoning trace in the UI.
-
-**Default:** `true`
-
-## `ui.theme`
-
-**Type:** `string`
-
-Theme name or path to custom theme file
-
-**Default:** `"tokyonight-moon"`
-
-## `ui.shiki`
-
-**Type:** `"andromeeda" | "aurora-x" | "auto" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
-
-Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.
-
-**Default:** `"auto"`
-
-## `ui.sessionTree`
-
-**Type:** `Array<"assistant" | "reasoning" | "system" | "tools">`
-
-What messages to show in the session tree. Defaults to assistant, reasoning, and tools.
-
-**Default:** `["assistant","reasoning","tools"]`
-
-## `ui.transparent`
-
-**Type:** `boolean`
-
-Make the background transparent. Defaults to false.
-
-**Default:** `false`
-
-## `ui.treeHeight`
-
-**Type:** `number`
-
-Maximum number of visible rows in the session tree.
-
-**Default:** `20`
-
-## `skills`
-
-**Type:** `object`
-
-## `skills.enabled`
-
-**Type:** `boolean`
-
-Allow skills to be used by the agent. Defaults to true.
-
-**Default:** `true`
-
-## `skills.actions`
-
-**Type:** `boolean`
-
-Show skill actions. Defaults to true.
-
-**Default:** `true`
-
-## `skills.actionPrefix`
-
-**Type:** `string`
-
-Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`
-
-**Default:** `"skill:"`
 
 ## `commands`
 
 **Type:** `object`
-
-Template commands.
 
 ## `commands.actionPrefix`
 
@@ -195,7 +59,7 @@ Existing messages up to this many tokens will be preserved in the context
 
 ## `compaction.reasoning`
 
-**Type:** `"high" | "low" | "max" | "medium" | "minimal" | "off" | "xhigh"`
+**Type:** `"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"`
 
 Reasoning effort for the compaction summary
 
@@ -217,17 +81,31 @@ Threshold for automatic compaction.
 
 **Default:** `0.95`
 
-## `loop`
+## `keymap`
 
 **Type:** `object`
 
-## `loop.enabled`
+Values:
 
-**Type:** `boolean`
+```json
+{
+  "anyOf": [
+    {
+      "type": "string"
+    },
+    {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  ]
+}
+```
 
-Enable LoopAgent behaviour even without a goal.
+## `loop`
 
-**Default:** `false`
+**Type:** `object`
 
 ## `loop.autoStart`
 
@@ -237,23 +115,23 @@ Start the loop automatically when the TUI becomes ready.
 
 **Default:** `false`
 
-## `loop.profile`
+## `loop.enabled`
 
-**Type:** `"autonomous" | "ci" | "interactive" | "supervisor" | "watch"`
+**Type:** `boolean`
 
-**Default:** `"interactive"`
+Enable LoopAgent behaviour even without a goal.
+
+**Default:** `false`
 
 ## `loop.goal`
 
 **Type:** `string`
 
-## `loop.maxTurns`
+## `loop.heartbeatMs`
 
 **Type:** `number`
 
-## `loop.maxWallTimeMs`
-
-**Type:** `number`
+**Default:** `30000`
 
 ## `loop.maxCostUsd`
 
@@ -271,33 +149,25 @@ Start the loop automatically when the TUI becomes ready.
 
 **Default:** `4`
 
+## `loop.maxTurns`
+
+**Type:** `number`
+
+## `loop.maxWallTimeMs`
+
+**Type:** `number`
+
 ## `loop.onNoProgress`
 
-**Type:** `"ask" | "reflect" | "stop"`
+**Type:** `"reflect" | "ask" | "stop"`
 
 **Default:** `"reflect"`
 
-## `loop.heartbeatMs`
+## `loop.profile`
 
-**Type:** `number`
+**Type:** `"interactive" | "autonomous" | "ci" | "watch" | "supervisor"`
 
-**Default:** `30000`
-
-## `loop.watch`
-
-**Type:** `object`
-
-## `loop.watch.everyMs`
-
-**Type:** `number`
-
-## `loop.watch.maxAttempts`
-
-**Type:** `number`
-
-## `loop.watch.hint`
-
-**Type:** `string`
+**Default:** `"interactive"`
 
 ## `loop.verify`
 
@@ -315,9 +185,33 @@ Start the loop automatically when the TUI becomes ready.
 
 **Type:** `number`
 
+## `loop.watch`
+
+**Type:** `object`
+
+## `loop.watch.everyMs`
+
+**Type:** `number`
+
+## `loop.watch.hint`
+
+**Type:** `string`
+
+## `loop.watch.maxAttempts`
+
+**Type:** `number`
+
 ## `masking`
 
 **Type:** `object`
+
+## `masking.delta`
+
+**Type:** `number`
+
+How far above the target ratio to trigger a new masking pass. Defaults to 0.25 (25%).
+
+**Default:** `0.25`
 
 ## `masking.enabled`
 
@@ -327,34 +221,21 @@ Whether to enable masking. Defaults to true.
 
 **Default:** `true`
 
-## `masking.minTokens`
-
-**Type:** `number`
-
-Don't mask tool-result parts whose original content is shorter
-than this (estimated tokens). Skips tiny "ok"-style success
-messages where the stub would be larger than the original.
-Doesn't apply to attachments (always worth masking).
-
-**Default:** `50`
-
 ## `masking.keepTurns`
 
 **Type:** `number`
 
-How many turns to keep in the tail of the conversation, regardless
-of score. Defaults to 20.
+How many turns to keep in the tail of the conversation, regardless of score. Defaults to 20.
 
 **Default:** `40`
 
-## `masking.delta`
+## `masking.minTokens`
 
 **Type:** `number`
 
-How far above the target ratio to trigger a new masking pass.
-Defaults to 0.25 (25%).
+Don't mask tool-result parts whose original content is shorter than this (estimated tokens). Skips tiny "ok"-style success messages where the stub would be larger than the original. Doesn't apply to attachments (always worth masking).
 
-**Default:** `0.25`
+**Default:** `50`
 
 ## `masking.target`
 
@@ -364,23 +245,17 @@ Target ratio of used/limit tokens to reach by masking. Defaults to 0.5 (50%).
 
 **Default:** `0.5`
 
+## `model`
+
+**Type:** `string`
+
+Default model to use for the agent.
+
 ## `permissions`
 
 **Type:** `object`
 
-## `permissions.preset`
-
-**Type:** `"permissive" | "readonly" | "strict" | "yolo"`
-
-Permissions preset to use. Defaults to "permissive".
-
-**Default:** `"permissive"`
-
 ## `permissions.allow`
-
-**Type:** `Array<string>`
-
-## `permissions.deny`
 
 **Type:** `Array<string>`
 
@@ -388,9 +263,29 @@ Permissions preset to use. Defaults to "permissive".
 
 **Type:** `Array<string>`
 
+## `permissions.deny`
+
+**Type:** `Array<string>`
+
+## `permissions.preset`
+
+**Type:** `"strict" | "readonly" | "permissive" | "yolo"`
+
+Permissions preset to use. Defaults to "permissive".
+
+**Default:** `"permissive"`
+
 ## `plugins`
 
 **Type:** `Array<string>`
+
+## `reasoning`
+
+**Type:** `"off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"`
+
+Default reasoning effort.
+
+**Default:** `"medium"`
 
 ## `resources`
 
@@ -402,37 +297,62 @@ Values:
 
 ```json
 {
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
     "enabled": {
-      "type": "boolean",
-      "description": "Whether the plugin is enabled. Defaults to true."
-    },
-    "include": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "When set, only include the resources, matching these paths/globs from the plugin."
+      "description": "Whether the plugin is enabled. Defaults to true.",
+      "type": "boolean"
     },
     "exclude": {
-      "type": "array",
+      "description": "When set, exclude the resources, matching these paths/globs from the plugin. Add a resource type to the exclude list to disable that resource type. For example, `[\"skills\"]` will disable all skills from the plugin. Exclude is applied after include.",
       "items": {
         "type": "string"
       },
-      "description": "When set, exclude the resources, matching these paths/globs from the plugin.\nAdd a resource type to the exclude list to disable that resource type. For example,\n`[\"skills\"]` will disable all skills from the plugin.\nExclude is applied after include."
+      "type": "array"
+    },
+    "include": {
+      "description": "When set, only include the resources, matching these paths/globs from the plugin.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     }
   },
-  "required": [],
-  "additionalProperties": false
+  "type": "object"
 }
 ```
+
+## `skills`
+
+**Type:** `object`
+
+## `skills.actionPrefix`
+
+**Type:** `string`
+
+Prefix for command actions. Defaults to `skill:`, e.g `/skill:SKILL_NAME`
+
+**Default:** `"skill:"`
+
+## `skills.actions`
+
+**Type:** `boolean`
+
+Show skill actions. Defaults to true.
+
+**Default:** `true`
+
+## `skills.enabled`
+
+**Type:** `boolean`
+
+Allow skills to be used by the agent. Defaults to true.
+
+**Default:** `true`
 
 ## `system`
 
 **Type:** `object`
-
-System integrations and external commands used by zaly.
 
 ## `system.bash`
 
@@ -458,31 +378,101 @@ Package manager command used for npm packs.
 
 **Default:** runtime-dependent
 
-## `$schema`
+## `tools`
 
-**Type:** `string`
+**Type:** `Array<string>`
 
-## `keymap`
+**Default:** `["bash","edit","read","write","fetch","find","grep","task_list","task_poll","task_stop"]`
+
+## `ui`
 
 **Type:** `object`
 
-Values:
+## `ui.collapsedTools`
 
-```json
-{
-  "oneOf": [
-    {
-      "type": "string"
-    },
-    {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
-  ]
-}
-```
+**Type:** `Array<"agent_send" | "agent_spawn" | "bash" | "edit" | "fetch" | "find" | "grep" | "loop" | "question" | "read" | "search" | "subagent" | "task_list" | "task_poll" | "task_stop" | "wakeup" | "write" | string>`
+
+Tools whose result body should be hidden in the UI.
+
+**Default:** `["read"]`
+
+## `ui.copyOnSelect`
+
+**Type:** `boolean`
+
+**Default:** `true`
+
+## `ui.images`
+
+**Type:** `boolean`
+
+Render images, if supported by the terminal
+
+**Default:** `true`
+
+## `ui.listHeight`
+
+**Type:** `number`
+
+Maximum number of visible rows in selection lists, like pickers and autocomplete.
+
+**Default:** `10`
+
+## `ui.mode`
+
+**Type:** `"scrollback" | "fullscreen"`
+
+Terminal display mode. Scrollback preserves terminal history/search; fullscreen uses an alternate screen with a fixed footer.
+
+**Default:** `"fullscreen"`
+
+## `ui.reasoning`
+
+**Type:** `boolean`
+
+Whether to show the reasoning trace in the UI.
+
+**Default:** `true`
+
+## `ui.sessionTree`
+
+**Type:** `Array<"assistant" | "reasoning" | "tools" | "system">`
+
+What messages to show in the session tree. Defaults to assistant, reasoning, and tools.
+
+**Default:** `["assistant","reasoning","tools"]`
+
+## `ui.shiki`
+
+**Type:** `"auto" | "andromeeda" | "aurora-x" | "ayu-dark" | "ayu-light" | "ayu-mirage" | "catppuccin-frappe" | "catppuccin-latte" | "catppuccin-macchiato" | "catppuccin-mocha" | "dark-plus" | "dracula" | "dracula-soft" | "everforest-dark" | "everforest-light" | "github-dark" | "github-dark-default" | "github-dark-dimmed" | "github-dark-high-contrast" | "github-light" | "github-light-default" | "github-light-high-contrast" | "gruvbox-dark-hard" | "gruvbox-dark-medium" | "gruvbox-dark-soft" | "gruvbox-light-hard" | "gruvbox-light-medium" | "gruvbox-light-soft" | "horizon" | "horizon-bright" | "houston" | "kanagawa-dragon" | "kanagawa-lotus" | "kanagawa-wave" | "laserwave" | "light-plus" | "material-theme" | "material-theme-darker" | "material-theme-lighter" | "material-theme-ocean" | "material-theme-palenight" | "min-dark" | "min-light" | "monokai" | "night-owl" | "night-owl-light" | "nord" | "one-dark-pro" | "one-light" | "plastic" | "poimandres" | "red" | "rose-pine" | "rose-pine-dawn" | "rose-pine-moon" | "slack-dark" | "slack-ochin" | "snazzy-light" | "solarized-dark" | "solarized-light" | "synthwave-84" | "tokyo-night" | "vesper" | "vitesse-black" | "vitesse-dark" | "vitesse-light"`
+
+Syntax highlighting: auto uses the theme's Shiki counterpart or generates from its syntax slots; a bundled name overrides it.
+
+**Default:** `"auto"`
+
+## `ui.theme`
+
+**Type:** `string`
+
+Theme name or path to custom theme file
+
+**Default:** `"tokyonight-moon"`
+
+## `ui.transparent`
+
+**Type:** `boolean`
+
+Make the background transparent. Defaults to false.
+
+**Default:** `false`
+
+## `ui.treeHeight`
+
+**Type:** `number`
+
+Maximum number of visible rows in the session tree.
+
+**Default:** `20`
 
 ## Permission presets
 
